@@ -1,0 +1,31 @@
+{
+ "name": "Я лучше всех — программа тренировок и питания",
+ "short_name": "Я лучше всех",
+ "lang": "ru",
+ "start_url": "/",
+ "scope": "/",
+ "display": "standalone",
+ "background_color": "#18141b",
+ "theme_color": "#c2456e",
+ "description": "Заполни анкету за 3–5 минут — получи свою программу тренировок и питания: дома или в зале, йога, пилатес, танцы. Упражнения с анимацией, без голодания.",
+ "icons": [
+  {
+   "src": "/icon-192.png",
+   "sizes": "192x192",
+   "type": "image/png",
+   "purpose": "any"
+  },
+  {
+   "src": "/icon-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "any"
+  },
+  {
+   "src": "/icon-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "maskable"
+  }
+ ]
+}
