@@ -7901,6 +7901,8 @@ const CB={kb:[],emo:{},close:{},motiv:[],used:{},last:null,loading:null,loaded:f
 /* rows: [id, regex (ru and en words together), [ru answers], [en answers], options]
    options: {adult:1} = not for kids mode, {diet:1} = weight-loss advice (hidden in gentle mode), {pri:n} = priority bonus */
 function kbAdd(tag,rows){rows.forEach(r=>CB.kb.push({id:r[0],tag,re:new RegExp(r[1],'gi'),ru:r[2],en:r[3]||[],o:r[4]||{}}));CB.loaded=true;}
+/* more variants for a topic defined in another file */
+function kbMore(id,ru,en){const it=CB.kb.find(x=>x.id===id);if(it){it.ru.push(...ru);it.en.push(...(en||[]));}}
 function kbEmo(o){Object.assign(CB.emo,o);}
 function kbClose(o){Object.assign(CB.close,o);}
 function kbMotiv(rows){CB.motiv.push(...rows);}
