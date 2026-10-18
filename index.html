@@ -5176,6 +5176,23 @@ KD('kn_calmdown','Спокойствие перед сном: «Сонный к�
  ['Lie on your back and hug your knees like a curled-up kitten.','Rock slowly.','Take 5 slow breaths.'],['торопиться.','rushing.'],['расслабление перед сном для детей','bedtime relaxation kids']),
 ]);
 
+/* ---- ex/_yt.js ---- */
+/* ============ YouTube search phrases for the «▶ Видео техники» link ============
+   The automatic phrase (name + «техника») found tractors for «Гусеница», car wipers for «Дворники» and real ponies for «Шаг пони».
+   Automatic phrases now get the exercise context of their category; YTQ holds hand-written phrases where that is still not enough. */
+const YT_CAT={glute:'упражнение для ягодиц',upper:'упражнение',core:'упражнение на пресс',cardio:'кардио упражнение',stretch:'растяжка упражнение',yoga:'йога',pilates:'пилатес упражнение',gym:'упражнение в тренажерном зале',fight:'бокс самооборона',balance:'упражнение',kids:'упражнение для детей'};
+const YT_CAT_EN={glute:'glute exercise',upper:'exercise',core:'ab exercise',cardio:'cardio exercise',stretch:'stretch',yoga:'yoga pose',pilates:'pilates exercise',gym:'gym exercise',fight:'boxing self defense',balance:'exercise',kids:'exercise for kids'};
+const YTQ={
+ d_pony:'шаг пони аэробика танцевальный',d_hiphop:'хип хоп базовый шаг bounce для начинающих',d_chacha:'ча ча ча базовый шаг аэробика',d_mambo:'шаг мамбо аэробика',d_kickball:'кик бол ченж шаг аэробика',
+ l_rainbow:'упражнение радуга для ягодиц на четвереньках',u_doorframerow:'тяга к дверному косяку упражнение для спины дома',h_stairs:'подъем по лестнице тренировка для ног и ягодиц',
+ l_hamwalk:'шаги пятками в ягодичном мосту упражнение',y2_legsupwall:'поза ноги на стене випарита карани',y2_wheel:'поза колеса урдхва дханурасана йога',c_jackknife:'складной нож на одну ногу упражнение на пресс',
+ c_bugbreath:'диафрагмальное дыхание лежа поясница прижата упражнение',k_bunny:'прыжки зайчиком зарядка для детей',h_buttkick:'захлест голени упражнение кардио',l_stepdown:'шаг вниз со ступеньки упражнение для колена',
+ y2_upplank:'пурвоттанасана обратная планка йога',y2_warrior3:'поза воина 3 вирабхадрасана 3',c_supermanhold:'упражнение супермен удержание для спины',c_woodchop:'дровосек с резинкой упражнение',fig4:'растяжка ягодиц лежа четверка',
+ donkey:'отведение ноги назад на четвереньках ягодицы',kickback:'отведение ноги назад стоя с утяжелителем ягодицы',steptouch:'приставной шаг аэробика step touch',y_lowlunge:'анджанейасана низкий выпад йога'};
+EX.forEach(e=>{
+ if(YTQ[e.id]){e.q=YTQ[e.id];return;}
+ if(e.q===e.name+' техника'){const n=e.name.replace(/[«»"()]/g,' ').replace(/\s+—\s+/g,' ').replace(/\s+/g,' ').trim();e.q=n+' '+(YT_CAT[e.cat]||'упражнение');}});
+
 /* ---- orig/workouts.js ---- */
 /* ============ WORKOUTS ============ */
 // sets block items: [id, sets, reps, note]; seq block items: [id, seconds|null, note]
@@ -7070,7 +7087,7 @@ function exCard(id,opt={}){const e=EXM[id];if(!e)return'';
  ${e.f&&e.f.length||need.length?`<div class="mus">${(e.f||[]).map(m=>`<span class="chip acc">● ${MUS_(m)}</span>`).join('')}${e.tempo?`<span class="chip">⏱ ${esc(L(e.tempo))}</span>`:''}${need.map(k=>`<span class="chip ${hasEq(k)?'ok':''}">🎒 ${L((EQUIP.find(q=>q[0]===k)||[0,k])[1])}</span>`).join('')}</div>`:''}
  <ol>${e.s.map(x=>`<li>${esc(L(x))}</li>`).join('')}</ol>
  <p class="bad"><b>${L('Частые ошибки:')}</b> ${esc(L(e.m))}<br><b>${L('Дыхание:')}</b> ${esc(L(e.b))}</p>
- <a class="vid noprint" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=${encodeURIComponent(LANG==='ru'?e.q:(EX_Q_EN[id]||L(e.name)+' exercise technique'))}">${L('▶ Видео техники на YouTube')}</a></article>`;}
+ <a class="vid noprint" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=${encodeURIComponent(LANG==='ru'?e.q:(EX_Q_EN[id]||L(e.name)+' '+(YT_CAT_EN[e.cat]||'exercise')))}">${L('▶ Видео техники на YouTube')}</a></article>`;}
 const EQ_OF={bridge:['loop'],hipthrust:['loop'],sumo:['loop'],latwalk:['loop'],clam:['loop'],rdl:['band'],slrdl:['band'],row:['band'],onearmrow:['band'],pulldown:['band'],facepull:['band'],pullover:['band'],ohpress:['band'],latraise:['band'],chestpress:['band'],triext:['band'],curl:['band'],tricepskb:['band'],hamstr:['band'],reversehyper:['ball'],hamcurl:['ball'],ballbug:['ball'],ballcrunch:['ball'],stirpot:['ball'],donkey:['ankle'],hydrant:['ankle'],sideabd:['ankle'],kickback:['ankle'],ladder:['ladder'],mfr:['roller']};
 function workoutList(pl,dIso,interactive){
  const dd=getDay(dIso),ex=dd.ex||{};let h='';
