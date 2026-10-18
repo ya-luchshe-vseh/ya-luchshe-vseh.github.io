@@ -6337,6 +6337,18 @@ function challengesHtml(){const T=tasksList();
  <div class="grid2">${CHALLENGES.map((c,i)=>{const on=T.some(t=>t.name===c[2]);return`<div class="card" style="margin:0"><div class="row" style="justify-content:space-between;flex-wrap:nowrap"><b>${c[0]} ${esc(L(c[1]))}</b><span class="chip">${L('{0} дней',c[5])}</span></div><div class="small muted" style="margin:6px 0">${esc(L(c[2]))}</div>${on?`<span class="chip ok">${L('Уже в задачах ✓')}</span>`:`<button class="btn" data-chal="${i}">${L('Начать')}</button>`}</div>`;}).join('')}</div>`;}
 {const base=vBio;vBio=function(){return base()+challengesHtml()+bioLibHtml();};}
 document.addEventListener('click',ev=>{const b=ev.target.closest('[data-chal]');if(!b||!ST_())return;const c=CHALLENGES[+b.dataset.chal];if(!tasksList().some(t=>t.name===c[2])){tasksList().push({id:'c'+Date.now().toString(36),name:c[2],icon:c[0],until:iso(addD(new Date(),c[5]))});save();}toast(L('Челлендж добавлен в задачи 💪'));route();});
+/* myths from popular social-media videos (checked 2026-10-19): [ru myth, ru truth, en myth, en truth] */
+const BIO_MYTHS2=[
+ ['Вода из медной посуды «ощелачивает» организм','Кислотность крови держится в пределах 7,35–7,45 — её регулируют почки и лёгкие, вода её не меняет. Медь немного подавляет бактерии в воде, но кислые напитки (вода с лимоном, сок, морс) в медной посуде без лужения хранить нельзя: медь переходит в напиток и может вызвать отравление.',
+  'Water from copper cups “alkalises” the body','Blood pH stays at 7.35–7.45, controlled by kidneys and lungs; water doesn’t change it. Copper slightly reduces bacteria in water, but acidic drinks (lemon water, juice) in unlined copper can cause copper poisoning.'],
+ ['Болезни и рак не живут в щелочной среде','Опухоль сама закисляет своё окружение — это следствие её обмена (эффект Варбурга), а не причина болезни. «Ощелачивание» рак не лечит; отказ от лечения ради такой диеты опасен для жизни. Польза «щелочных» диет — только от овощей в них.',
+  'Diseases and cancer can’t live in an alkaline body','Tumours acidify their surroundings as a result of their metabolism, not the cause. Alkalising doesn’t treat cancer; any benefit of “alkaline” diets comes from the vegetables.'],
+ ['Антиоксиданты в капсулах продлевают молодость','В больших исследованиях добавки бета-каротина, витамина E и высоких доз витамина A не снижали смертность, а бета-каротин у курящих повышал риск рака лёгких. Антиоксиданты из овощей, ягод и орехов — полезны.',
+  'Antioxidant pills keep you young','In large trials beta-carotene, vitamin E and high-dose vitamin A pills didn’t reduce deaths; beta-carotene raised lung cancer risk in smokers. Antioxidants from vegetables, berries and nuts are good.'],
+ ['Цитата «доктора» в ролике — значит, правда','Проверяйте, кто автор. «Доктор» Роберт Янг (книга «Чудо pH») не врач и был осуждён в США за медицинскую практику без лицензии; «доктор Себи» не имел медицинского образования. Слова настоящих учёных (Варбурга, Клода Бернара) в таких роликах обычно искажены.',
+  'A “doctor’s” quote in a video means it’s true','Check the author. “Dr” Robert Young (The pH Miracle) isn’t a physician and was convicted in the US of practising medicine without a licence; “Dr Sebi” had no medical training. Real scientists’ words are usually distorted in such videos.']];
+BIO_MYTHS.push(...BIO_MYTHS2.map(m=>[m[0],m[1]]));
+TR(Object.fromEntries(BIO_MYTHS2.flatMap(m=>[[m[0],m[2]],[m[1],m[3]]])));
 
 /* ---- orig/quotes.js ---- */
 const QUOTES=[
@@ -7257,12 +7269,14 @@ function coachButtons(){const m=COACH.cur;if(!m||COACH.typing)return;const ac=$(
  ac.innerHTML=m.acts.map(a=>a[1][0]==='@'?`<button class="btn" data-co="${a[1].slice(1)}">${esc(a[0])}</button>`:a[1][0]==='#'?`<a class="btn" href="${a[1]}">${esc(a[0])}</a>`:`<button class="btn" data-act="${a[1]}">${esc(a[0])}</button>`).join('')+(COACH.q.length?`<button class="btn pri" data-co="next">${L('Дальше ›')}</button>`:'');}
 function coachTip(){const t=todayIso(),tip=bioTipFor(t,cycleInfo(t)),q=QUOTES[Math.floor(Math.random()*QUOTES.length)];
  const pool=[[L('Фишка дня: {0}. {1}',L(tip.t),L(tip.how)),'point'],[`«${L(q[1])}» — ${L(q[0])}. ${L(q[2])}`,'idle'],[L(TIPS[Math.floor(Math.random()*TIPS.length)]),'point'],[L('Хочешь поговорить? Я могу разобрать твою неделю, подсказать меню или просто поддержать 💛'),'wave']];
+ /* a myth of the day from the biohacking section (the popular ones from social-media videos come first) */
+ {const m=BIO_MYTHS[Math.random()<.5?BIO_MYTHS.length-1-Math.floor(Math.random()*BIO_MYTHS2.length):Math.floor(Math.random()*BIO_MYTHS.length)];pool.push([L('Разоблачаю миф: «{0}». {1}',L(m[0]),L(m[1])),'point','','#/bio']);}
  /* her own recorded phrases: on the website they play with her real voice */
  ['here','perfect','proud','calm','start','keep','care','believe'].forEach(k=>pool.push([L(AV_LINES[k][2]),'idle',k]));
  ['water','stretch','feel','withyou'].forEach(k=>pool.push([L(AV_LINES2[k][2]),'idle',k]));
  ['protein','veg','snack','glass','sleepfirst','three','thoughts','wavefeel','heart','worth','compare','restprog','knees','nohold','dizzy'].forEach(k=>pool.push([L(avLine(k)[2]),'idle',k]));
  if(AV.on&&LANG==='ru')pool.push([L('Хочешь, расскажу о себе? Это займёт минуту.'),'wave','','@intro']);
- const x=pool[Math.floor(Math.random()*pool.length)];coachSay(x[0],{mood:x[1],line:x[2]||undefined,acts:x[3]?[[L('▶️ Послушать Алину'),x[3]]]:x[1]==='wave'?[[L('💬 Поговорить'),'#/friend']]:[]});}
+ const x=pool[Math.floor(Math.random()*pool.length)];coachSay(x[0],{mood:x[1],line:x[2]||undefined,acts:x[3]?[[x[3]==='@intro'?L('▶️ Послушать Алину'):L('🧪 Все мифы'),x[3]]]:x[1]==='wave'?[[L('💬 Поговорить'),'#/friend']]:[]});}
 function coachGreet(){if(COACH.greeted||!ST_())return;COACH.greeted=true;const s=ST_(),t=todayIso(),pd=progDay(t),hr=new Date().getHours(),nm=NM(),N=NW();
  const hi=hr<5?L('Доброй ночи'):hr<12?L('Доброе утро'):hr<18?L('Добрый день'):L('Добрый вечер');
  S.meta=S.meta||{};
@@ -7897,7 +7911,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest('[data-mood]');
    chat or the psychologist page opens; single-file builds have it inline. A reply = an opener that answers her mood
    (tired, anxious, proud…) + the best matching topic answer (a different variant each time) + sometimes a personal fact
    (her calories, today's workout) + a closing question or a short motivating line. */
-const CB={kb:[],emo:{},close:{},motiv:[],used:{},last:null,loading:null,loaded:false};
+const CB={kb:[],emo:{},close:{},motiv:[],quiz:[],facts:[],used:{},last:null,loading:null,loaded:false,q:null,scale:false};
 /* rows: [id, regex (ru and en words together), [ru answers], [en answers], options]
    options: {adult:1} = not for kids mode, {diet:1} = weight-loss advice (hidden in gentle mode), {pri:n} = priority bonus */
 function kbAdd(tag,rows){rows.forEach(r=>CB.kb.push({id:r[0],tag,re:new RegExp(r[1],'gi'),ru:r[2],en:r[3]||[],o:r[4]||{}}));CB.loaded=true;}
@@ -7906,6 +7920,10 @@ function kbMore(id,ru,en){const it=CB.kb.find(x=>x.id===id);if(it){it.ru.push(..
 function kbEmo(o){Object.assign(CB.emo,o);}
 function kbClose(o){Object.assign(CB.close,o);}
 function kbMotiv(rows){CB.motiv.push(...rows);}
+/* «Правда или миф?»: [ru question, true|false, ru explanation, en question, en explanation] */
+function kbQuiz(rows){CB.quiz.push(...rows);}
+/* interesting facts [ru, en] */
+function kbFacts(rows){CB.facts.push(...rows);}
 /* website: fetch the base the first time it is needed */
 function cbLoad(){if(CB.loaded||!window.CHATKB_SRC)return Promise.resolve();if(CB.loading)return CB.loading;
  return CB.loading=new Promise(res=>{const sc=document.createElement('script');sc.src=window.CHATKB_SRC;sc.onload=res;sc.onerror=()=>{CB.loading=null;res();};document.head.appendChild(sc);});}
@@ -7930,16 +7948,38 @@ function cbFill(s){if(!/\{/.test(s))return s;const d=todayIso();let nr={},pl=nul
   .replace(/\{min\}/g,pl&&!pl.base.rest?estMin(pl.blocks):'20').replace(/\{name\}/g,name).replace(/,\s*\{name\}/g,'');}
 const cbMotivLine=()=>{if(!CB.motiv.length)return'';const r=cbPick('motiv',CB.motiv);return LANG==='ru'?r[0]:r[1];};
 /* the whole reply; null when the base isn't here (the old built-in tips answer then) */
-function cbReply(text,pref){if(!CB.loaded)return null;const t=cbNorm(text),en=LANG!=='ru',lg=en?'en':'ru';
+/* the conversation layer: she remembers what she just asked, so short answers make sense —
+   a quiz answer, a number on her 1–10 scale, «ещё?»/«почему?» about the last topic */
+const CB_YES=/^(правда|верно|да|true|yes|fact|факт)(?![а-яa-z])/,CB_NO=/^(миф|неправда|неверно|нет|ложь|false|no|myth)(?![а-яa-z])/;
+const CB_MORE=/^(а )?(еще|ещё|подробнее|почему|зачем|а как|как это|и что|и\?|а дальше|дальше|продолжай|расскажи (еще|ещё|больше|подробнее))[\s?!.]*$|^(more|why|tell me more|go on|and\?)[\s?!.]*$/;
+function cbQuizAsk(lg){const q=cbPick('quiz',CB.quiz);CB.q=q;return lg==='ru'?'🎯 Правда или миф?\n\n**'+q[0]+'**\n\nНапиши «правда» или «миф».':'🎯 Fact or myth?\n\n**'+q[3]+'**\n\nReply “fact” or “myth”.';}
+function cbDialog(t,lg){const ru=lg==='ru';
+ if(CB.q&&(CB_YES.test(t)||CB_NO.test(t))){const q=CB.q,said=CB_YES.test(t),ok=said===q[1];CB.q=null;
+  const head=ok?cbPick('qok'+lg,ru?['Точно! 🎉','Верно, умница! 💪','Да! Ты отлично разбираешься 😊']:['Right! 🎉','Correct, well done! 💪']):cbPick('qno'+lg,ru?['Не совсем 🙂','А вот и нет 😉','Почти! Но нет.']:['Not quite 🙂','Nope 😉']);
+  return head+' '+(ru?(q[1]?'Это правда.':'Это миф.'):(q[1]?'It’s a fact.':'It’s a myth.'))+'\n\n'+(ru?q[2]:q[4])+'\n\n'+(ru?'Ещё вопрос? Напиши «игра».':'Another one? Type “quiz”.');}
+ CB.q=null;
+ if(CB.scale&&/^\d{1,2}([.,]\d)?[\s!.)]*$/.test(t)){CB.scale=false;const n=parseFloat(t.replace(',','.'));if(n>=0&&n<=10){
+  const k=n<=3?'low':n<=6?'mid':'high';return cbPick('sc'+k+lg,{low:ru?['Ох, это тяжело. Спасибо, что честно сказала 💛 Давай сегодня только самое необходимое: вода, еда, тёплый душ, ранний сон. Хочешь рассказать, что больше всего давит?','Слышу тебя. При таком состоянии нужна забота, а не подвиги. Попробуй дыхание: вдох на 4, выдох на 6, пять раз. Я рядом.']:['That sounds hard. Thank you for being honest 💛 Today just the basics: water, food, a warm shower, early sleep.'],
+   mid:ru?['Средне — тоже нормально. Что могло бы добавить хотя бы один балл? Прогулка, музыка, разговор с кем-то?','Понятно. Давай найдём одну маленькую приятную вещь на сегодня — и посмотрим, сдвинется ли цифра.']:['Middling is okay too. What could add one point? A walk, music, a chat?'],
+   high:ru?['Как здорово! 🎉 Что помогло тебе так себя чувствовать? Запомним это.','Ура! Такие дни — отличное время для тренировки или нового дела 💪']:['Wonderful! 🎉 What helped you feel this way?']}[k]);}}
+ if(CB_MORE.test(t)&&CB.last){const it=CB.kb.find(x=>x.id===CB.last);if(it&&it[lg].length>1)return cbPick(it.id+lg,it[lg])+(Math.random()<.5?'\n\n'+(ru?'Спрашивай ещё, если интересно 😊':'Ask more if you like 😊'):'');}
+ if(/(^|[^а-я])(игра|играть|сыграем|поиграем|викторин|правда или миф|квиз)|quiz|fact or myth|let.?s play/.test(t)&&CB.quiz.length)return cbQuizAsk(lg);
+ if(/интересн(ый|ое|ого) факт|удиви|что-нибудь интересное|расскажи интересн|факт дня|fun fact|interesting fact|surprise me/.test(t)&&CB.facts.length){const f=cbPick('fact',CB.facts);
+  return '💡 '+(ru?f[0]:f[1])+'\n\n'+cbPick('fq'+lg,ru?['Хочешь ещё факт? Или сыграем в «Правда или миф»?','Знала? 😊','Интересно, правда?']:['Want another? Or play “Fact or myth”?','Did you know? 😊']);}
+ return null;}
+/* the whole reply; null when the base isn't here (the old built-in tips answer then) */
+function cbReply(text,pref){if(!CB.loaded)return null;const t=cbNorm(text).trim(),en=LANG!=='ru',lg=en?'en':'ru';
+ const dl=cbDialog(t,lg);if(dl){CB.hit=true;return cbFill(dl);}
  const it=cbMatch(t,pref),mood=cbMood(t);CB.hit=!!it;
  const op=mood&&CB.emo[mood][lg]&&(!it||it.tag!=='psy'||Math.random()<.5)?cbPick('e:'+mood+lg,CB.emo[mood][lg]):'';
  let body;
  if(it){CB.last=it.id;body=cbPick(it.id+lg,it[lg]);}
  else if(mood&&CB.close['m:'+mood])body=cbPick('m:'+mood+lg,CB.close['m:'+mood][lg]);
- else body=cbPick('none'+lg,CB.close.none[lg]);
+ else body=cbPick('none'+lg,CB.close.none[lg])+(Math.random()<.4?(en?'\n\nOr let’s play “Fact or myth” — type “quiz” 😊':'\n\nИли давай сыграем в «Правда или миф» — напиши «игра» 😊'):'');
  const tag=it?it.tag:mood?'psy':'',cl=CB.close[tag];
  const r=Math.random();let end='';
  if(cl&&cl[lg]&&r<.55)end=cbPick('c:'+tag+lg,cl[lg]);else if(r<.8)end='✨ '+cbMotivLine();
+ CB.scale=/от 1 до 10|from 1 to 10/.test(end);
  return cbFill([op,body,end].filter(Boolean).join('\n\n'));}
 
 /* ---- ai.js ---- */
