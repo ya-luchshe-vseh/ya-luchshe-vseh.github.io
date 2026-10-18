@@ -7989,7 +7989,7 @@ function cbReply(text,pref){if(!CB.loaded)return null;const t=cbNorm(text).trim(
  const r=Math.random();let end='';
  if(cl&&cl[lg]&&r<.55)end=cbPick('c:'+tag+lg,cl[lg]);else if(r<.8)end='✨ '+cbMotivLine();
  /* now and then she offers her game: often when she didn't understand, rarely otherwise (never in a sad talk) */
- if(!it&&!mood?Math.random()<.4:tag!=='psy'&&!mood&&Math.random()<.08)end='🎯 '+cbPickInvite();
+ if(!it&&!mood?Math.random()<.4:tag!=='psy'&&!mood&&Math.random()<.08)end=cbPickInvite();
  CB.scale=/от 1 до 10|from 1 to 10/.test(end);
  return cbFill([op,body,end].filter(Boolean).join('\n\n'));}
 
