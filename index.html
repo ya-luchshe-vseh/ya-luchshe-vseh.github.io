@@ -479,8 +479,8 @@ body.onfriend #coach{display:none!important}
 #coach[data-mood=wave] .p-idle,#coach[data-mood=cheer] .p-idle{opacity:0}
 #coach[data-mood=cheer] .astage{transform:translateX(-38%)}
 .alinafig .apose img.af{inset:auto;opacity:0;transition:opacity .05s linear;pointer-events:none}
-.alinafig[data-eye=H] .apose .f-eH,.alinafig[data-eye=C] .apose .f-eC,.alinafig[data-mouth=A] .apose .f-mA,.alinafig[data-mouth=O] .apose .f-mO,.alinafig[data-mouth=C] .apose .f-mC{opacity:1}
-.alinafig .apose img.f-eH,.alinafig .apose img.f-eC{transition:none}
+.alinafig[data-mouth=A] .apose .f-mA,.alinafig[data-mouth=O] .apose .f-mO,.alinafig[data-mouth=C] .apose .f-mC{opacity:1}
+.alinafig .apose img.f-eH,.alinafig .apose img.f-eC{transition:none}.alinafig .apose img.f-eC{z-index:1}
 #coach.talk .alinafig .abody{animation:fTalk 1.2s ease-in-out infinite,fSway 8s ease-in-out infinite}
 #coach.talk .alinafig .aglow{animation:fGlow .8s ease-in-out infinite}
 #coach[data-mood=cheer] .alinafig .abody{animation:fHop .6s ease-in-out 3,fSway 8s ease-in-out infinite}
@@ -5389,18 +5389,23 @@ function coachMount(){if($('#coach'))return;const d=document.createElement('div'
   if(ev.target.closest('#cfig')){if(COACH.typing)coachFinish();else if(COACH.q.length)coachNext();else coachTip();}});
  const loop=now=>{requestAnimationFrame(loop);if(COACH.min||document.hidden||now-COACH.last<45)return;COACH.last=now;coachDraw(now);};requestAnimationFrame(loop);}
 function coachMin(on){COACH.min=on;const c=$('#coach');if(c)c.classList.toggle('min',on);try{localStorage.setItem('coach-min',on?'1':'0');}catch(e){}}
-function coachDraw(now){const el=$('#cfig');if(!el)return;if(COACH.mood!=='idle'&&now>COACH.moodUntil)COACH.mood='idle';const c=$('#coach'),round=who()==='kid';if(!el.firstChild||el.dataset.kind!==(round?'r':'f')){el.dataset.kind=round?'r':'f';el.innerHTML=round?alinaPortrait('a-float'):alinaFigure();}if(c){c.classList.toggle('round',round);c.classList.toggle('talk',!!COACH.talk);c.dataset.mood=COACH.mood;}
- const f=!round&&el.querySelector('.alinafig');if(f){const[e,m]=alinaFace(now);if(f.dataset.eye!==e)f.dataset.eye=e;if(f.dataset.mouth!==m)f.dataset.mouth=m;}}
-/* face of the floating Alina: blinks at random (sometimes twice); while she talks the mouth follows the letters being typed.
-   eye: ''|H|C, mouth: ''(the picture's own "э")|A|O|C */
-const FACE={next:0,seq:[],eye:'',mouth:'C',until:0};
+function coachDraw(now){const el=$('#cfig');if(!el)return;if(COACH.mood!=='idle'&&now>COACH.moodUntil)COACH.mood='idle';const c=$('#coach'),round=who()==='kid';if(!el.firstChild||el.dataset.kind!==(round?'r':'f')){el.dataset.kind=round?'r':'f';el.innerHTML=round?alinaPortrait('a-float'):alinaFigure();el.querySelectorAll('img.af').forEach(i=>i.decode&&i.decode().catch(()=>{}));}if(c){c.classList.toggle('round',round);c.classList.toggle('talk',!!COACH.talk);c.dataset.mood=COACH.mood;}
+ const f=!round&&el.querySelector('.alinafig');if(f){alinaBlink(f,now);const m=alinaMouth(now);if(f.dataset.mouth!==m)f.dataset.mouth=m;}}
+/* face of the floating Alina. Blinks are played by the browser (Web Animations, its own exact timing and smooth crossfades
+   open → half → closed → half → open), so they don't stutter on the 45 ms coach tick; sometimes twice in a row.
+   While she talks the mouth follows the letters being typed: ''(the picture's own "э")|A|O|C */
+const FACE={next:0,twice:false,mouth:'C',until:0};
+const BLINK_MS=270,BLINK_C=[{opacity:0},{opacity:0,offset:.15},{opacity:1,offset:.3},{opacity:1,offset:.5},{opacity:0,offset:.72},{opacity:0}],
+ BLINK_H=[{opacity:0},{opacity:1,offset:.15},{opacity:1,offset:.72},{opacity:0}];
+function alinaBlink(f,now){if(now<FACE.next)return;
+ const c=f.querySelector('.f-eC'),h=f.querySelector('.f-eH');
+ if(c&&h&&c.animate&&!matchMedia('(prefers-reduced-motion: reduce)').matches){c.animate(BLINK_C,{duration:BLINK_MS});h.animate(BLINK_H,{duration:BLINK_MS});}
+ FACE.twice=!FACE.twice&&Math.random()<.18;FACE.next=now+(FACE.twice?BLINK_MS+140:2600+Math.random()*4200);}
 const faceVis=ch=>/[аяa]/i.test(ch)?'A':/[оуюёыou]/i.test(ch)?'O':/[мбпвфmbpvf\s.,!?…—-]/i.test(ch)?'C':'';
-function alinaFace(now){
- if(!FACE.seq.length&&now>FACE.next){const b=t=>[[t,'H'],[t+55,'C'],[t+150,'H'],[t+205,'']];FACE.seq=b(now);if(Math.random()<.18)FACE.seq.push(...b(now+380));FACE.next=now+2600+Math.random()*4200;}
- while(FACE.seq.length&&now>=FACE.seq[0][0])FACE.eye=FACE.seq.shift()[1];
+function alinaMouth(now){
  if(!COACH.talk||COACH.mood!=='idle')FACE.mouth='C';
  else if(now>=FACE.until){const t=COACH.cur?COACH.cur.text:'';let v=faceVis(t[COACH.pos||0]||' ');if(v===FACE.mouth&&v!=='C')v=v===''?'A':'';FACE.mouth=v;FACE.until=now+85+Math.random()*60;}
- return[FACE.eye,FACE.mouth];}
+ return FACE.mouth;}
 function coachSay(text,opt){opt=opt||{};const m={text,mood:opt.mood||'idle',acts:opt.acts||[]};
  if(opt.now){COACH.q.unshift(m);coachNext();}else{COACH.q.push(m);if(!COACH.cur&&!COACH.typing)coachNext();else coachButtons();}}
 function coachNext(){const m=COACH.q.shift();if(!m){const b=$('#cbub');if(b)b.hidden=true;COACH.cur=null;return;}
