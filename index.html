@@ -530,12 +530,16 @@ body.onfriend #coach{display:none!important}
 .alinafig.vmode .p-idle img{transition:opacity .22s ease}
 .alinafig.vplay canvas.avid{opacity:1}.alinafig.vplay .p-idle img{opacity:0}
 #coach .alinafig.vmode .p-idle{opacity:1!important}#coach .alinafig.vmode .astage{transform:none!important}
-.alinafig.vplay .abody{animation:none!important}
+/* the video Alina moves by herself: only a very light breath and sway, the same while a clip plays (no jumps, hops or shaking) */
+#coach .alinafig.vmode .abody{animation:vBreath 5s ease-in-out infinite,vSway 9s ease-in-out infinite!important}
+@keyframes vBreath{0%,100%{transform:scale(1,1)}50%{transform:scale(1.002,1.004)}}
+@keyframes vSway{0%,100%{rotate:-.15deg}50%{rotate:.15deg}}
 #coach .csnd{position:absolute;right:44px;top:4px;z-index:3;pointer-events:auto;width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:var(--card);font-size:14px;line-height:1;cursor:pointer;padding:0;opacity:.8}#coach .csnd:hover{opacity:1}
 #coach.round .csnd{right:26px;top:-10px}
 #coach.min .csnd{display:none}
 @media(max-width:600px){#coach:not(.round) .csnd{right:auto;left:-34px;top:auto;bottom:6px}}
 .alinafig.vmode .aglow{display:none}
+@media(prefers-reduced-motion:reduce){#coach .alinafig.vmode .abody{animation:none!important}}
 
 </style>
 </head>
@@ -601,7 +605,7 @@ body.onfriend #coach{display:none!important}
 const ALINA_IMG="alina-face.jpg";
 const ALINA_POSES={idle:"alina-front.webp",wave:"alina-wave.webp",cheer:"alina-cheer.webp"};
 const ALINA_FACE_IMG={eC:"alina-eyes-closed.webp",eH:"alina-eyes-half.webp",mA:"alina-mouth-a.webp",mO:"alina-mouth-o.webp",mC:"alina-mouth-closed.webp"};
-window.ALINA_VID={"talk":"alina-talk.mp4","move":"alina-move.mp4","still":"alina-still.webp"};
+window.ALINA_VID={"talk":"alina-talk.mp4","talk2":"alina-talk2.mp4","move":"alina-move.mp4","still":"alina-still.webp"};
 /* ---- core.js ---- */
 "use strict";
 /* true inside the claude.ai viewer; false on the standalone site */
@@ -5726,7 +5730,7 @@ let VOICE=null;
 function pickVoice(){try{const re=LANG==='ru'?/^ru/i:/^en/i;const vs=speechSynthesis.getVoices().filter(v=>re.test(v.lang));VOICE=vs.find(v=>/irina|svetlana|milena|alena|daria|ekaterina|anna|zira|samantha|susan|hazel|libby|sonia|aria|jenny|женск|female/i.test(v.name))||vs.find(v=>/google/i.test(v.name))||vs[0]||null;}catch(e){}}
 if('speechSynthesis' in window){pickVoice();speechSynthesis.onvoiceschanged=pickVoice;}
 const voiceOn=()=>!!(ST_()&&ST_().voice!==false&&'speechSynthesis' in window);
-function say(t,keep){if(!voiceOn()||!t)return;try{if(!keep)speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang=LANG==='ru'?'ru-RU':'en-US';if(VOICE)u.voice=VOICE;u.rate=1.02;u.pitch=1.08;speechSynthesis.speak(u);}catch(e){}}
+function say(t,keep){if(!voiceOn()||!t)return;if(avSay(t))return;try{if(!keep)speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang=LANG==='ru'?'ru-RU':'en-US';if(VOICE)u.voice=VOICE;u.rate=1.02;u.pitch=1.08;speechSynthesis.speak(u);}catch(e){}}
 const cue=id=>CUE[id]?L(CUE[id]):'';
 function startCount(){const st=PL.steps[PL.i],e=EXM[st.ex];const n=parseInt(st.reps)||10;const per=/на ногу|на сторону|на руку/.test(st.reps);
  const tl=e.time||[[.6,1.1],[.8,1.3]],cyc=tl.reduce((s,x)=>s+x[0]+x[1],0)*1000,off=(tl[0][0]+tl[0][1])*1000;let side=1;
@@ -6900,7 +6904,7 @@ function alinaFigure(){const pc=(v,b)=>(v/b*100).toFixed(3)+'%';
 
 /* ---- alinavid.js ---- */
 /* ============ ALINA VIDEO: the real, talking Alina (website only; tools/alinavideo.py builds the files) ============
-   alina-talk.mp4 = her 58 s speech (HeyGen), alina-move.mp4 = gestures without sound (Kling).
+   alina-talk.mp4 = her 58 s speech, alina-talk2.mp4 = workout words (HeyGen), alina-move.mp4 = gestures without sound (Kling).
    Each frame holds the colour on the left half and the alpha on the right; WebGL puts them together on a canvas
    over the still picture, so she stands on the page without a black box, in every browser (plain H.264).
    The speech is cut into lines (times in seconds, cut at the pauses): a coach message with `line` plays that exact
@@ -6919,8 +6923,56 @@ const AV_LINES={
  care:[51.33,54.74,'Ты заслуживаешь заботы, уважения, отдыха.'],
  believe:[54.74,56.57,'Я верю, что ты справишься.'],
  go:[56.57,58.3,'Ну что, начнём вместе?']};
-/* gestures in alina-move.mp4: each starts from the calm pose */
-const AV_MOVES={wave:[0,3.3],cheer:[3.4,6.2]};
+/* the second recording (alina-talk2.mp4): workout words, counting, greetings by the time of day, reminders */
+const AV_LINES2={
+ morning:[0,1.23,'Доброе утро!'],
+ day:[1.23,2.14,'Добрый день!'],
+ evening:[2.14,3.02,'Добрый вечер!'],
+ night:[3.02,3.97,'Доброй ночи!'],
+ back:[3.97,6.24,'С возвращением, я скучала!'],
+ wstart:[6.24,8.04,'Начинаем тренировку.'],
+ warm:[8.04,8.81,'Разминка.'],
+ next:[8.81,10.54,'Следующее упражнение.'],
+ rest:[10.54,11.31,'Отдых.'],
+ side:[11.31,12.81,'Меняем сторону.'],
+ lastset:[12.81,13.96,'Последний подход!'],
+ push:[13.96,16.02,'Ещё чуть-чуть, ты сможешь!'],
+ n1:[16.02,16.75,'Раз.'],
+ n2:[16.75,17.36,'Два.'],
+ n3:[17.36,17.81,'Три.'],
+ n4:[17.81,18.54,'Четыре.'],
+ n5:[18.54,19.23,'Пять.'],
+ n6:[19.23,19.94,'Шесть.'],
+ n7:[19.94,20.68,'Семь.'],
+ n8:[20.68,21.37,'Восемь.'],
+ n9:[21.37,22.09,'Девять.'],
+ n10:[22.09,22.76,'Десять.'],
+ sec5:[22.76,23.94,'Пять секунд!'],
+ inhale:[23.94,24.69,'Вдох.'],
+ exhale:[24.69,25.45,'Выдох.'],
+ hold:[25.45,26.06,'Держим.'],
+ straight:[26.06,27.24,'Спина прямая.'],
+ slow:[27.24,28.12,'Не спеши.'],
+ pause:[28.12,28.67,'Пауза.'],
+ cont:[28.67,29.58,'Продолжаем.'],
+ great:[29.58,30.5,'Отлично!'],
+ ready:[30.5,31.29,'Готово!'],
+ wdone:[31.29,33.78,'Тренировка сделана, ты умница!'],
+ record:[33.78,35.62,'Ура, новый рекорд!'],
+ restday:[35.62,38.74,'Сегодня день отдыха: прогулка и шаги.'],
+ light:[38.74,41.28,'Сегодня лёгкий день, береги себя.'],
+ missed:[41.28,44.7,'Пропустила тренировку? Ничего страшного, продолжаем.'],
+ week:[44.7,47.04,'Новая неделя, новые силы!'],
+ water:[47.04,48.71,'Не забудь выпить воды.'],
+ stretch:[48.71,50.25,'Пора немного размяться.'],
+ weigh:[50.25,51.8,'Запиши сегодня свой вес.'],
+ feel:[51.8,53.48,'Как ты себя чувствуешь?'],
+ backup:[53.48,55.64,'Давай сохраним копию твоих данных.'],
+ withyou:[55.64,57.55,'Я с тобой, всё получится.']};
+const avLine=k=>AV_LINES[k]?[...AV_LINES[k],'talk']:AV_LINES2[k]?[...AV_LINES2[k],'talk2']:null;
+/* gestures in alina-move.mp4 (first Kling clip 0–10.43 s, second 10.43–31.33, the wave forth and back 31.33–37.13):
+   both start and end in the calm pose — the still picture is the first frame of the first clip */
+const AV_MOVES={wave:[31.33,37.1],cheer:[0,10.38]};
 const AV={on:!!window.ALINA_VID,gl:null,cv:null,vids:{},kind:null,end:0,sound:false,onend:null,unlocked:false,shown:false,raf:0};
 const avSoundOn=()=>!(S.settings&&S.settings.alinaSound===false);
 /* browsers allow sound only after the girl has touched the page once */
@@ -6950,7 +7002,7 @@ function avTick(){AV.raf=0;const v=AV.kind&&AV.vids[AV.kind];if(!v||v.paused)ret
   try{gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,v);gl.viewport(0,0,cv.width,cv.height);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);gl.drawArrays(gl.TRIANGLE_STRIP,0,4);avShow(true);}catch(e){AV.on=false;avStop();return;}}
  AV.raf=requestAnimationFrame(avTick);}
 /* play [from,to) of a file. sound=true tries her voice and falls back to silent lips when the browser refuses */
-function avPlay(kind,from,to,o){o=o||{};if(!AV.on||!avCanvas())return false;
+function avPlay(kind,from,to,o){o=o||{};if(!AV.on||(!avCanvas()&&!o.audio))return false;
  if(matchMedia('(prefers-reduced-motion: reduce)').matches&&!o.sound)return false;
  const v=avVid(kind);if(AV.kind&&AV.kind!==kind)AV.vids[AV.kind].pause();
  AV.kind=kind;AV.end=to;AV.onend=o.onend||null;AV.sound=!!o.sound;v.muted=!o.sound;
@@ -6962,13 +7014,28 @@ function avStop(keep){const v=AV.kind&&AV.vids[AV.kind];if(v){v.pause();v.muted=
  if(AV.raf){cancelAnimationFrame(AV.raf);AV.raf=0;}if(!keep)avShow(false);}
 const avSpeaking=()=>!!(AV.kind==='talk'&&AV.sound);
 /* silent lips for any text: a random piece of the speech, chained until the typing stops */
-function avLips(){const ks=Object.keys(AV_LINES),k=ks[Math.floor(Math.random()*ks.length)],[a,b]=AV_LINES[k];
- avPlay('talk',a,b,{onend:()=>{if(COACH.talk||(window.speechSynthesis&&speechSynthesis.speaking))avLips();}});}
+const AV_LIPS=[...Object.keys(AV_LINES),...Object.keys(AV_LINES2).filter(k=>AV_LINES2[k][1]-AV_LINES2[k][0]>1.5)];
+function avLips(){const [a,b,,kind]=avLine(AV_LIPS[Math.floor(Math.random()*AV_LIPS.length)]);
+ avPlay(kind,a,b,{onend:()=>{if(COACH.talk||(window.speechSynthesis&&speechSynthesis.speaking))avLips();}});}
+/* her voice for several recorded pieces one after another (workout player); works even when the corner Alina is hidden */
+function avVoice(keys){if(!AV.on||LANG!=='ru'||!AV.unlocked)return false;const ls=keys.map(avLine);if(ls.some(l=>!l))return false;
+ const go=i=>{const l=ls[i];if(!l)return;avPlay(l[3],l[0],l[1],{sound:true,audio:true,onend:()=>go(i+1)});};go(0);return true;}
+/* the workout player's spoken texts that she has recorded (Russian only); anything else stays with the browser voice */
+const AV_SAY={'Другая сторона':['side'],'Подход выполнен':['ready'],'Начали!':['cont'],'один':['n1'],'два':['n2'],'три':['n3'],
+ 'Отлично, держим!':['great','hold'],'Ещё чуть-чуть!':['push'],'Ты сильнее, чем думаешь!':['push'],'Дыши ровно!':['inhale','exhale'],'Красиво работаешь!':['great']};
+function avSay(t){t=String(t).trim();let k=AV_SAY[t];
+ if(!k&&/^\d+$/.test(t)&&+t>=1&&+t<=10)k=['n'+t];
+ if(!k&&/^Отдых\. Далее/.test(t))k=['rest','next'];
+ if(!k&&/^Отдых \d/.test(t))k=['rest'];
+ if(!k&&/^Подход \d+\./.test(t))k=['cont'];
+ if(!k&&/тренировка выполнена/.test(t))k=['wdone'];
+ if(!k&&/Спина скажет спасибо/.test(t))k=['great'];
+ if(!k||!avVoice(k))return false;try{speechSynthesis.cancel();}catch(e){}return true;}
 /* called by coachNext(): returns the typing speed (ms per letter) when her real voice plays, so text and voice end together */
 function avMessage(m){if(!AV.on)return 0;
- const ln=m.line&&AV_LINES[m.line];
+ const ln=m.line&&avLine(m.line);
  if(ln&&LANG==='ru'&&AV.unlocked&&(m.force||avSoundOn())){
-  const ok=avPlay('talk',ln[0],ln[1],{sound:true,onend:()=>{if(COACH.cur===m&&m.auto)coachNext();}});
+  const ok=avPlay(ln[3],ln[0],ln[1],{sound:true,onend:()=>{if(COACH.cur===m&&m.auto)coachNext();}});
   if(ok)return Math.max(20,Math.min(90,(ln[1]-ln[0])*1000/m.text.length));}
  const mv=AV_MOVES[m.mood];
  if(mv)avPlay('move',mv[0],mv[1],{onend:()=>{if(COACH.cur===m&&COACH.talk)avLips();}});
@@ -7055,6 +7122,7 @@ function coachTip(){const t=todayIso(),tip=bioTipFor(t,cycleInfo(t)),q=QUOTES[Ma
  const pool=[[L('Фишка дня: {0}. {1}',L(tip.t),L(tip.how)),'point'],[`«${L(q[1])}» — ${L(q[0])}. ${L(q[2])}`,'idle'],[L(TIPS[Math.floor(Math.random()*TIPS.length)]),'point'],[L('Хочешь поговорить? Я могу разобрать твою неделю, подсказать меню или просто поддержать 💛'),'wave']];
  /* her own recorded phrases: on the website they play with her real voice */
  ['here','perfect','proud','calm','start','keep','care','believe'].forEach(k=>pool.push([L(AV_LINES[k][2]),'idle',k]));
+ ['water','stretch','feel','withyou'].forEach(k=>pool.push([L(AV_LINES2[k][2]),'idle',k]));
  if(AV.on&&LANG==='ru')pool.push([L('Хочешь, расскажу о себе? Это займёт минуту.'),'wave','','@intro']);
  const x=pool[Math.floor(Math.random()*pool.length)];coachSay(x[0],{mood:x[1],line:x[2]||undefined,acts:x[3]?[[L('▶️ Послушать Алину'),x[3]]]:x[1]==='wave'?[[L('💬 Поговорить'),'#/friend']]:[]});}
 function coachGreet(){if(COACH.greeted||!ST_())return;COACH.greeted=true;const s=ST_(),t=todayIso(),pd=progDay(t),hr=new Date().getHours(),nm=NM(),N=NW();
@@ -7065,21 +7133,26 @@ function coachGreet(){if(COACH.greeted||!ST_())return;COACH.greeted=true;const s
   coachSay(L('{0}, {1}! 💛 Я составила программу именно под тебя: {2} {3}, {4} {5} в неделю по ~{6} минут.',hi,nm,N,plural(N,'неделя','недели','недель'),s.days||5,plural(s.days||5,'тренировка','тренировки','тренировок'),s.mins||60),{mood:'wave'});
   if(!s.noCount)coachSay(isLose()?L('Твоя норма — около {0} ккал и {1} г белка в день. Ниже {2} ккал не опускаемся никогда: так уходит жир, а волосы, гормоны и мышцы остаются с тобой.',nr.kcal,nr.p,nr.floor):L('Твоя норма — около {0} ккал и {1} г белка в день. Без голодания: тело строит мышцы.',nr.kcal,nr.p),{mood:'point',acts:[[L('Подробнее'),'#/food']]});
   coachSay(L('Нажми на меня в любой момент — подскажу. А в разделе «Подружка-тренер» можно поговорить со мной о чём угодно.'),{mood:'point',acts:[[L('💬 Поговорить'),'#/friend']]});return;}
- coachSay(AUTOSAVED?L('{0}, {1}! 💛 Вчерашний день я сохранила — начинаем новый.',hi,nm):L('{0}, {1}! 💛',hi,nm),{mood:'wave'});
+ const away=AUTOSAVED?diffD(P(AUTOSAVED),P(t)):0;
+ coachSay(AUTOSAVED?L('{0}, {1}! 💛 Вчерашний день я сохранила — начинаем новый.',hi,nm):L('{0}, {1}! 💛',hi,nm),{mood:'wave',line:hr<5?'night':hr<12?'morning':hr<18?'day':'evening'});
+ if(away>=3)coachSay(L('С возвращением, я скучала!'),{line:'back'});
+ if(pd.dow===0&&pd.week>1&&pd.week<=N)coachSay(L('Новая неделя, новые силы!'),{line:'week'});
+ {const y=iso(addD(P(t),-1)),py=progDay(y);if(away<3&&py.d>=0&&py.week<=N&&!planDay(y).base.rest&&!getDay(y).done)coachSay(L('Пропустила тренировку? Ничего страшного, продолжаем.'),{line:'missed'});}
  {const k=avLineOfDay();coachSay(L(AV_LINES[k][2]),{line:k});}
  analyzeRecent(7).filter(f=>f.sev==='urgent'||f.sev==='doctor').slice(0,2).forEach(f=>coachSay(`${L('Меня беспокоит:')} ${L(f.title).toLowerCase()}. ${f.who?L('К кому обратиться:')+' '+L(f.who)+'. ':''}${f.tests?L('Что сдать:')+' '+L(f.tests)+'.':''}`,{mood:'think',acts:[[L('Открыть дневник'),'#/journal']]}));
  {const wr=analyzeRecent(7).filter(f=>f.sev==='urgent'||f.sev==='doctor').slice(0,2);if(wr.length)coachSay(L(AV_LINES.doctor[2]),{mood:'idle',line:'doctor'});}
  if(pd.d<0)coachSay(L('До старта {0} {1}. Пройди по списку подготовки на экране — и мы готовы!',-pd.d,plural(-pd.d,'день','дня','дней')),{mood:'point'});
  else if(pd.week<=N){const pl=planDay(t),nr=normFor(t),dd=getDay(t);
-  if(pl.base.rest)coachSay(L('Сегодня день отдыха: прогулка и норма шагов — и всё отлично.'),{mood:'idle'});
-  else if(dd.done)coachSay(L('Тренировка уже сделана — ты умница! 🎉'),{mood:'cheer'});
+  if(pl.base.rest)coachSay(L('Сегодня день отдыха: прогулка и норма шагов — и всё отлично.'),{mood:'idle',line:'restday'});
+  else if(dd.done)coachSay(L('Тренировка уже сделана — ты умница! 🎉'),{mood:'cheer',line:'wdone'});
   else coachSay(L('Сегодня «{0}», около {1} минут. Нажми «▶ Начать тренировку» — я буду считать вслух.',L(pl.base.t),estMin(pl.blocks)),{mood:'point'});
-  if(pl.autoLight)coachSay(L('Я облегчила сегодняшнюю тренировку по твоему циклу и самочувствию. Береги себя 💛'),{mood:'idle'});
+  if(pl.autoLight)coachSay(L('Я облегчила сегодняшнюю тренировку по твоему циклу и самочувствию. Береги себя 💛'),{mood:'idle',line:'light'});
   coachSay(s.noCount?L('Сегодня: вода {0} л, шаги {1}, белок в каждый приём.',fmtN(nr.water),fmtI(nr.steps)):L('Твоя норма сегодня: {0} ккал, белок {1} г, вода {2} л, шаги {3}.',nr.kcal,nr.p,fmtN(nr.water),fmtI(nr.steps)),{mood:'idle'});}
+ if(hr>=5&&hr<12&&!s.noCount&&who()!=='kid'&&pd.d>=0&&!getDay(t).w)coachSay(L('Запиши сегодня свой вес.'),{line:'weigh',acts:[[L('Открыть дневник'),'#/journal']]});
  phaseGreet(t);monthGreet();
  {const tp=todayTips(t);if(tp[0])coachSay(L('Совет на сегодня ({0}): {1}. {2}',L(tp[0].why),L(tp[0].title),L(tp[0].how)),{mood:'point',acts:[[L('Все советы'),'#/today']]});}
  if(s.tre)coachSay(L('Окно питания сегодня 10:00–16:00 🕙 В последний приём — белок 35–40 г, после 16:00 только вода и чай.'),{mood:'point'});
- if(S.meta.lastBackup!==weekKey(new Date())&&Object.keys(S.days).length>5)coachSay(L('Новая неделя — давай сохраним резервную копию твоих данных? 💾'),{mood:'point',acts:[[L('💾 Сохранить копию'),'backup']]});}
+ if(S.meta.lastBackup!==weekKey(new Date())&&Object.keys(S.days).length>5)coachSay(L('Новая неделя — давай сохраним резервную копию твоих данных? 💾'),{mood:'point',line:'backup',acts:[[L('💾 Сохранить копию'),'backup']]});}
 let CR_W=null,CR_N=null;
 function coachReact(type,v,d){if(!ST_())return;const t=d||todayIso(),R=(txt,mood)=>coachSay(txt,{mood,now:true});
  if(type==='w'){clearTimeout(CR_W);CR_W=setTimeout(()=>{const w=num(v);if(!w)return;const prev=[];for(let i=1;i<=7;i++){const x=num(getDay(iso(addD(P(t),-i))).w);if(x)prev.push(x);}
