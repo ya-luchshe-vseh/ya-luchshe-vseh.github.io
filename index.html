@@ -3965,6 +3965,7 @@ function curWeek(){return progDay(todayIso()).week;}
 function schedKey(week,dow){week=Math.max(1,Math.min(NW(),week));let k=phaseOf(week).tpl[dow];if(k==='AB')k=week%2?'A':'B';if(k==='BA')k=week%2?'B':'A';return styledKey(k,week,dow);}
 /* Sports chosen in the questionnaire. Old profiles have none -> 'home' (the original programme, unchanged). */
 const MIND=['yoga','pilates','stretch'],CARD=['fight','dance','run'];
+const GOAL_POOL={posture:['PIL1b','YOGA1b','STR1b']}; // goals whose style levels don't fit: a fixed set of sessions aimed at the back
 const GOAL_STYLE={flex:'stretch',stress:'yoga',posture:'pilates',selfdef:'fight',endurance:'run',postnatal:'pilates',bones:'balance'};
 function sportsOf(){const s=ST_();let sp=(s.sports&&s.sports.length?s.sports:['home']).slice();if(sp.includes('gym')&&!(s.eq||{}).gym)sp=sp.filter(x=>x!=='gym');if(!sp.length)sp=['home'];return sp;}
 function extraStyles(){const s=ST_(),sp=sportsOf(),ex=sp.filter(x=>MIND.includes(x)||CARD.includes(x)),g=GOAL_STYLE[s.gtype];if(g&&!ex.includes(g))ex.push(g);
@@ -3973,7 +3974,8 @@ function slotIdx(week,dow,strength){const t=phaseOf(week).tpl;let n=0;for(let i=
 function styledKey(k,week,dow){const lv=Math.min(s_lvcap(),phaseOf(week).n),ab=week%2?'a':'b',w=W[k];
  if(k==='KIDX')return styleKeyFor('kids',lv,(week+dow)%2?'a':'b');
  if(k==='BALX')return styleKeyFor('balance',lv,ab);
- if(k==='MOBX'){const m=sportsOf().filter(x=>MIND.includes(x));const st=m.length?m[(week+dow)%m.length]:'stretch';return styleKeyFor(st,1,(week+dow)%2?'a':'b');}
+ if(k==='MOBX'){const m=sportsOf().filter(x=>MIND.includes(x)),g=GOAL_STYLE[ST_().gtype];if(g&&MIND.includes(g)&&!m.includes(g))m.unshift(g); // seniors: the mobility day follows the goal
+ const st=m.length?m[(week+dow)%m.length]:'stretch';return styleKeyFor(st,1,(week+dow)%2?'a':'b');}
  if(!w||isPreg()||k==='PREG'||who()!=='me')return k;
  const sp=sportsOf(),ex=extraStyles(),strength=STRENGTH.includes(k),t=phaseOf(week).tpl;
  // variant alternates every time the same style comes round again
@@ -3981,11 +3983,14 @@ function styledKey(k,week,dow){const lv=Math.min(s_lvcap(),phaseOf(week).n),ab=w
  if(w.rest){// a week with no cardio day: the first walk day becomes a session of her chosen extra style
   if(k!=='WALK'||!ex.length||t.some(x=>W[x]&&!W[x].rest&&!STRENGTH.includes(x)&&x!=='AB'&&x!=='BA')||t.indexOf('WALK')!==dow)return k;
   const mind=ex.filter(x=>MIND.includes(x)),pool=mind.length?mind:ex;return pickOf(pool,week);}
- if(strength){if(sp.includes('gym'))return gymKeyFor(k,lv,ab);if(sp.includes('home'))return k;
+ // the goal's own style takes every 2nd strength day (bones: every 3rd — strength itself is good for bones)
+ if(strength){const g=GOAL_STYLE[ST_().gtype],si=slotIdx(week,dow,true);
+  if(g&&ex.includes(g)&&(g==='balance'?si%3===2:si%2===1)){const pool=GOAL_POOL[ST_().gtype];return pool?pool[Math.floor(si/2+week)%pool.length]:styleKeyFor(g,lv,ab);}
+  if(sp.includes('gym'))return gymKeyFor(k,lv,ab);if(sp.includes('home'))return k;
   if(!ex.length)return k;return pickOf(ex,slotIdx(week,dow,true)+week*3)||k;}
  const pool=(sp.includes('home')||sp.includes('gym')?['orig']:[]).concat(ex);if(!pool.length||pool.length===1&&pool[0]==='orig')return k;
  return pickOf(pool,slotIdx(week,dow,false)+week*2)||k;}
-const s_lvcap=()=>ST_().gtype==='postnatal'?2:3;
+const s_lvcap=()=>ST_().gtype==='postnatal'||ST_().level==='new'?2:3; // beginners and postnatal never get the hardest style level
 const TOTAL_D=()=>NW()*7;
 
 /* ---- norms.js ---- */
