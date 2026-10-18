@@ -526,9 +526,10 @@ body.onfriend #coach{display:none!important}
 /* touch screens: bigger "done" boxes next to exercises */
 @media(pointer:coarse),(max-width:860px){.wi input[type=checkbox]{width:28px;height:28px}}
 /* the real Alina (video): canvas over the still picture, crossfaded while a clip plays; mood pictures are not used */
-.alinafig.vmode canvas.avid{position:absolute;inset:0;width:100%;height:100%;opacity:0;transition:opacity .22s ease;pointer-events:none}
-.alinafig.vmode .p-idle img{transition:opacity .22s ease}
-.alinafig.vplay canvas.avid{opacity:1}.alinafig.vplay .p-idle img{opacity:0}
+.alinafig.vmode canvas.avid,.alinafig.vmode canvas.avidle{position:absolute;inset:0;width:100%;height:100%;opacity:0;transition:opacity .35s ease;pointer-events:none}
+.alinafig.vmode .p-idle img{transition:opacity .35s ease}
+.alinafig.vidle canvas.avidle{opacity:1}.alinafig.vidle .p-idle img{opacity:0}
+.alinafig.vplay canvas.avid{opacity:1}.alinafig.vplay .p-idle img,.alinafig.vplay canvas.avidle{opacity:0}
 #coach .alinafig.vmode .p-idle{opacity:1!important}#coach .alinafig.vmode .astage{transform:none!important}
 /* the video Alina moves by herself: only a very light breath and sway, the same while a clip plays (no jumps, hops or shaking) */
 #coach .alinafig.vmode .abody{animation:vBreath 5s ease-in-out infinite,vSway 9s ease-in-out infinite!important}
@@ -540,6 +541,11 @@ body.onfriend #coach{display:none!important}
 @media(max-width:600px){#coach:not(.round) .csnd{right:auto;left:-34px;top:auto;bottom:6px}}
 .alinafig.vmode .aglow{display:none}
 @media(prefers-reduced-motion:reduce){#coach .alinafig.vmode .abody{animation:none!important}}
+
+/* the video Alina's own eyes and lips on the still (tools/avface.py); hidden while a clip plays over her */
+.alinafig.vmode[data-mouth=m1] .apose .f-m1,.alinafig.vmode[data-mouth=m2] .apose .f-m2,.alinafig.vmode[data-mouth=m3] .apose .f-m3,.alinafig.vmode[data-mouth=m4] .apose .f-m4,.alinafig.vmode[data-mouth=mO] .apose .f-mO,.alinafig.vmode[data-mouth=mC] .apose .f-mC{opacity:1}
+.alinafig.vmode .apose img.af{transition:opacity .06s linear}.alinafig.vmode .apose img.f-eH,.alinafig.vmode .apose img.f-eC{transition:none}
+.alinafig.vplay .apose img.af,.alinafig.vidle .apose img.af{opacity:0!important}
 
 </style>
 </head>
@@ -605,7 +611,7 @@ body.onfriend #coach{display:none!important}
 const ALINA_IMG="alina-face.jpg";
 const ALINA_POSES={idle:"alina-front.webp",wave:"alina-wave.webp",cheer:"alina-cheer.webp"};
 const ALINA_FACE_IMG={eC:"alina-eyes-closed.webp",eH:"alina-eyes-half.webp",mA:"alina-mouth-a.webp",mO:"alina-mouth-o.webp",mC:"alina-mouth-closed.webp"};
-window.ALINA_VID={"talk":"alina-talk.mp4","talk2":"alina-talk2.mp4","move":"alina-move.mp4","still":"alina-still.webp"};
+window.ALINA_VID={"still":"alina-still.webp","av":"av/","avm":"avm/","face":{"eH":[246,138,152,66],"eC":[246,138,152,66],"m1":[260,210,106,70],"m2":[260,210,106,70],"m3":[260,210,106,70],"m4":[260,210,106,70],"mO":[260,210,106,70],"mC":[260,210,106,70]}};
 /* ---- core.js ---- */
 "use strict";
 /* true inside the claude.ai viewer; false on the standalone site */
@@ -673,7 +679,7 @@ function uiConfirm(msg,yes,no){return new Promise(res=>{let d=$('#dlg');if(!d){d
  d.onclick=e=>{const b=e.target.closest('[data-dlg]');if(!b&&e.target!==d)return;e.stopPropagation();d.hidden=true;d.innerHTML='';res(!!b&&b.dataset.dlg==='1');};
  setTimeout(()=>{const p=d.querySelector('.pri');if(p)p.focus();},30);});}
 
-window.I18N_SRC='i18n-en.js';
+window.I18N_SRC='i18n-en.js';window.CHATKB_SRC='chat-kb.js';
 </script>
 <script>if(LANG!=='ru')document.write('<script src="i18n-en.js"><\/script>');</script>
 <script>
@@ -6897,7 +6903,9 @@ const ALINA_LAYERS=[{k:'idle',x:0,y:0,w:600,h:795},{k:'wave',x:-78.9,y:-5.8,w:67
 const ALINA_FACE={eC:[170,122,224,105],eH:[170,122,224,105],mA:[200,202,149,113],mO:[200,202,149,113],mC:[200,202,149,113]};
 /* website: the real Alina from her videos (alinavid.js) — a still picture with a WebGL canvas on top that plays the clips */
 function alinaFigure(){const pc=(v,b)=>(v/b*100).toFixed(3)+'%';
- if(AV.on)return`<div class="alinafig live vmode" role="img" aria-label="${esc(L('Алина'))}"><div class="aglow"></div><div class="astage"><div class="abody"><div class="apose p-idle" style="left:0;top:0;width:100%;height:100%"><img src="${ALINA_VID.still}" alt="" width="600" height="794" decoding="async" draggable="false"><canvas class="avid" width="600" height="794"></canvas></div></div></div></div>`;
+ /* her real eyes and lips (tools/avface.py) lie on the still: blinks, and lip shapes for texts she has no recording of */
+ const vface=()=>Object.entries(ALINA_VID.face||{}).map(([k,[x,y,w,h]])=>`<img class="af f-${k}" src="alina-v-${k}.webp" alt="" style="left:${pc(x,600)};top:${pc(y,794)};width:${pc(w,600)};height:${pc(h,794)}" decoding="async" draggable="false">`).join('');
+ if(AV.on)return`<div class="alinafig live vmode" role="img" aria-label="${esc(L('Алина'))}"><div class="aglow"></div><div class="astage"><div class="abody"><div class="apose p-idle" style="left:0;top:0;width:100%;height:100%"><img src="${ALINA_VID.still}" alt="" width="600" height="794" decoding="async" draggable="false">${vface()}${ALINA_VID.idle?'<canvas class="avidle" width="600" height="794"></canvas>':''}<canvas class="avid" width="600" height="794"></canvas></div></div></div></div>`;
  const face=()=>Object.entries(ALINA_FACE).map(([k,[x,y,w,h]])=>`<img class="af f-${k}" src="${ALINA_FACE_IMG[k]}" alt="" style="left:${pc(x,600)};top:${pc(y,795)};width:${pc(w,600)};height:${pc(h,795)}" decoding="async" draggable="false">`).join('');
  const layer=l=>`<div class="apose p-${l.k}" style="left:${pc(l.x,600)};top:${pc(l.y,795)};width:${pc(l.w,600)};height:${pc(l.h,795)}"><img src="${ALINA_POSES[l.k]}" alt="" width="${l.w}" height="${l.h}" loading="lazy" decoding="async" draggable="false">${l.k==='idle'?face():''}</div>`;
  return`<div class="alinafig live" role="img" aria-label="${esc(L('Алина'))}"><div class="aglow"></div><div class="astage"><div class="abody">${ALINA_LAYERS.map(layer).join('')}</div></div></div>`;}
@@ -6969,11 +6977,102 @@ const AV_LINES2={
  feel:[51.8,53.48,'Как ты себя чувствуешь?'],
  backup:[53.48,55.64,'Давай сохраним копию твоих данных.'],
  withyou:[55.64,57.55,'Я с тобой, всё получится.']};
-const avLine=k=>AV_LINES[k]?[...AV_LINES[k],'talk']:AV_LINES2[k]?[...AV_LINES2[k],'talk2']:null;
+/* three more recordings (full figure): workout extras, food, cycle, questionnaire, psychology, safety, styles */
+const AV_MORE={
+ talk3:{
+  set2:[0,1.35,'Подход два.'],
+  set3:[1.35,2.18,'Подход три.'],
+  set4:[2.18,3.29,'Подход четыре.'],
+  rest30:[3.29,5.14,'Отдых тридцать секунд.'],
+  rest45:[5.14,6.9,'Отдых сорок пять секунд.'],
+  rest60:[6.9,7.83,'Отдых минута.'],
+  rest90:[7.83,9.49,'Отдых полторы минуты.'],
+  getready:[9.49,10.55,'Приготовься.'],
+  half:[10.55,11.62,'Половина позади!'],
+  breathe:[11.62,12.78,'Дыши ровно.'],
+  nice:[12.78,14.07,'Красиво работаешь!'],
+  stronger:[14.07,16.07,'Ты сильнее, чем думаешь!'],
+  setdone:[16.07,17.1,'Подход выполнен.'],
+  lastex:[17.1,18.9,'Последнее упражнение!'],
+  todaywk:[18.9,20.5,'Сегодня у нас тренировка.'],
+  pressgo:[20.5,23.11,'Нажми «Начать», я буду считать вслух.'],
+  softday:[23.11,24.97,'Сегодня мягкий день по циклу.'],
+  strongday:[24.97,27.8,'Сегодня сильный день, можно чуть больше.'],
+  normscreen:[27.8,30.12,'Твоя норма на сегодня уже на экране.'],
+  posture:[30.12,31.55,'Пора выпрямить спину.'],
+  month:[31.55,33.82,'Посмотри, сколько ты сделала за месяц!'],
+  bedtime:[33.82,35.6,'Пора готовиться ко сну.'],
+  breath46:[35.6,39.72,'Давай подышим вместе: вдох на четыре, выдох на шесть.'],
+  listen:[39.72,41.05,'Я тебя слушаю.'],
+  thanks:[41.05,42.73,'Спасибо, что поделилась.'],
+  crisis:[42.73,47.58,'Если тебе сейчас очень плохо, позвони по номеру сто двенадцать. Ты не одна.'],
+  baby:[47.58,48.74,'Привет, малышка!'],
+  champ:[48.74,50.27,'Ты настоящая чемпионка!'],
+  joints:[50.27,52.9,'Береги суставы, двигайся плавно.'],
+  bye:[52.9,54.7,'До завтра, отдыхай!'],
+  yay:[54.7,56.11,'Ура, получилось!'],
+  wait:[56.11,58.18,'Не торопись, я подожду.'],
+  proudof:[58.18,59.41,'Горжусь тобой.'],
+  forward:[59.41,60.01,'Вперёд!'],
+  clever:[60.01,60.97,'Умница!']},
+ talk4:{
+  meet:[0,5.54,'Давай познакомимся! Ответь на несколько вопросов, и я составлю программу под тебя.'],
+  planready:[5.54,7.06,'Твоя программа готова!'],
+  checkfield:[7.06,8.63,'Проверь, пожалуйста, это поле.'],
+  breakfast:[8.63,10.27,'Пора завтракать!'],
+  protein:[10.27,12.8,'Не забудь про белок в каждом приёме пищи.'],
+  veg:[12.8,14.83,'Добавь овощи к обеду.'],
+  snack:[14.83,16.21,'Перекус лучше с белком.'],
+  dinner:[16.21,18.04,'Вечером ешь полегче.'],
+  day1:[18.04,21.59,'Сегодня первый день цикла, будь к себе бережной.'],
+  fol:[21.59,25.92,'Фолликулярная фаза: сил больше, можно добавить нагрузку.'],
+  ovu:[25.92,28.59,'Овуляция: ты на пике энергии!'],
+  lut:[28.59,32.89,'Лютеиновая фаза: нормально хотеть сладкого и больше отдыхать.'],
+  stepsdone:[32.89,34.71,'Норма шагов выполнена!'],
+  walkmore:[34.71,37.74,'Пройдись ещё немного, до цели совсем чуть-чуть.'],
+  slept:[37.74,40.98,'Ты спала мало, сегодня тренируемся мягче.'],
+  logfeel:[40.98,43.04,'Запиши, как ты себя чувствуешь.'],
+  mood:[43.04,44.43,'Отметь настроение.'],
+  preg:[44.43,48.55,'Беременность — только с разрешения врача и в щадящем режиме.'],
+  nostarve:[48.55,52.19,'Не голодай: так уходят мышцы и волосы, а не жир.'],
+  week7:[52.19,54.25,'Целая неделя без пропусков!'],
+  month1:[54.25,56.33,'Месяц с нами, ты невероятная!'],
+  glass:[56.33,58.36,'Выпей стакан воды.'],
+  hug:[58.36,59.26,'Обнимаю!'],
+  did:[59.26,60.72,'Ты справилась! Ура!']},
+ talk5:{
+  yoga:[0,3.74,'Сегодня йога: дыши спокойно и не тянись через боль.'],
+  pilates:[3.74,6.5,'Пилатес любит медленный темп и точность.'],
+  stretch2:[6.5,8.82,'Растяжка только на тёплые мышцы.'],
+  box:[8.82,12.56,'Бокс: кулаки у лица, бей с поворотом корпуса.'],
+  dance:[12.56,15.78,'Танцуем! Двигайся, как тебе приятно.'],
+  run:[15.78,17.59,'Бег начинаем с быстрой ходьбы.'],
+  knees:[17.59,20.27,'Колени смотрят туда же, куда носки.'],
+  nohold:[20.27,21.81,'Не задерживай дыхание.'],
+  dizzy:[21.81,24.75,'Если закружилась голова, остановись и присядь.'],
+  chestpain:[24.75,28.39,'При боли в груди или одышке сразу вызывай скорую.'],
+  cramps:[28.39,32.78,'Болит живот в эти дни? Тёплая грелка и мягкая растяжка помогут.'],
+  sleepfirst:[32.78,34.43,'Сон важнее лишней тренировки.'],
+  phone:[34.43,37.05,'Отложи телефон за час до сна.'],
+  three:[37.05,39.58,'Назови три хорошие вещи за сегодня.'],
+  thoughts:[39.58,42.22,'Заметь свои мысли и не спорь с ними.'],
+  wavefeel:[42.22,44.05,'Это чувство пройдёт, как волна.'],
+  heart:[44.05,47.27,'Положи руку на сердце и сделай медленный выдох.'],
+  worth:[47.27,49.96,'Ты важна просто так, без условий.'],
+  compare:[49.96,52.8,'Сравнивай себя только с собой вчерашней.'],
+  restprog:[52.8,54.97,'Отдых — это тоже часть прогресса.'],
+  notweight:[54.97,58.23,'Вес не главное: смотри на силу и самочувствие.'],
+  cutie:[58.23,59.37,'Красотулька!']}};
+const avLine=k=>{if(AV_LINES[k])return[...AV_LINES[k],'talk',k];if(AV_LINES2[k])return[...AV_LINES2[k],'talk2',k];
+ for(const f in AV_MORE)if(AV_MORE[f][k])return[...AV_MORE[f][k],f,k];return null;};
 /* gestures in alina-move.mp4 (first Kling clip 0–10.43 s, second 10.43–31.33, the wave forth and back 31.33–37.13):
    both start and end in the calm pose — the still picture is the first frame of the first clip */
 const AV_MOVES={wave:[31.33,37.1],cheer:[0,10.38]};
-const AV={on:!!window.ALINA_VID,gl:null,cv:null,vids:{},kind:null,end:0,sound:false,onend:null,unlocked:false,shown:false,raf:0};
+const AV={on:!!window.ALINA_VID,gl:null,cv:null,vids:{},kind:null,end:0,sound:false,lips:false,onend:null,unlocked:false,shown:false,raf:0};
+/* the website has every phrase and gesture as its own small file (tools/avsplit.py): av/ for big screens, avm/ for phones
+   (a third of the weight; Alina is ~150 px tall there). Kinds 'k:<key>' are these files; 'talk', 'move'… are the long ones. */
+const AV_SPLIT=!!(window.ALINA_VID&&ALINA_VID.av);
+const avDir=()=>matchMedia('(max-width:600px)').matches?ALINA_VID.avm:ALINA_VID.av;
 const avSoundOn=()=>!(S.settings&&S.settings.alinaSound===false);
 /* browsers allow sound only after the girl has touched the page once */
 ['pointerdown','keydown'].forEach(e=>addEventListener(e,()=>{AV.unlocked=true;},{once:true,capture:true}));
@@ -6988,58 +7087,82 @@ function avGL(cv){let gl;try{gl=cv.getContext('webgl',{premultipliedAlpha:true,a
  gl.bindTexture(gl.TEXTURE_2D,gl.createTexture());
  [[gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE],[gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE],[gl.TEXTURE_MIN_FILTER,gl.LINEAR],[gl.TEXTURE_MAG_FILTER,gl.LINEAR]].forEach(([k,v])=>gl.texParameteri(gl.TEXTURE_2D,k,v));
  return gl;}
-function avVid(kind){if(AV.vids[kind])return AV.vids[kind];const v=document.createElement('video');
- v.muted=true;v.playsInline=true;v.setAttribute('playsinline','');v.setAttribute('muted','');v.preload='auto';v.src=ALINA_VID[kind];
+function avVid(kind){if(AV.vids[kind]){AV.vids[kind].used=performance.now();return AV.vids[kind];}
+ /* keep a handful of small phrase files around; drop the oldest ones */
+ const ks=Object.keys(AV.vids).filter(k=>/^k:/.test(k)&&k!==AV.kind&&!AV.vids[k].keep);
+ if(ks.length>7){ks.sort((a,b)=>AV.vids[a].used-AV.vids[b].used).slice(0,ks.length-7).forEach(k=>{const o=AV.vids[k];o.removeAttribute('src');o.load();o.remove();delete AV.vids[k];});}
+ const v=document.createElement('video');v.used=performance.now();
+ v.muted=true;v.playsInline=true;v.setAttribute('playsinline','');v.setAttribute('muted','');v.preload='auto';v.src=/^k:/.test(kind)?avDir()+kind.slice(2)+'.mp4':ALINA_VID[kind];
  v.style.cssText='position:fixed;left:0;bottom:0;width:2px;height:2px;opacity:0;pointer-events:none';v.setAttribute('aria-hidden','true');
  document.body.appendChild(v);return AV.vids[kind]=v;}
 /* the canvas lives in the coach figure, which is re-rendered sometimes: re-attach WebGL when it changed */
 function avCanvas(){const cv=document.querySelector('#coach canvas.avid');if(!cv)return null;
  if(cv!==AV.cv){AV.cv=cv;AV.gl=avGL(cv);if(!AV.gl)AV.on=false;}return AV.gl?cv:null;}
 function avShow(on){AV.shown=on;const f=document.querySelector('#coach .alinafig');if(f)f.classList.toggle('vplay',on);}
-function avTick(){AV.raf=0;const v=AV.kind&&AV.vids[AV.kind];if(!v||v.paused)return;
- if(v.currentTime>=AV.end-.03){const cb=AV.onend;avStop(true);if(cb)cb();if(!AV.kind)avShow(false);return;}
- const cv=avCanvas();if(cv&&v.readyState>=2&&!v.seeking){const gl=AV.gl;
-  try{gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,v);gl.viewport(0,0,cv.width,cv.height);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);gl.drawArrays(gl.TRIANGLE_STRIP,0,4);avShow(true);}catch(e){AV.on=false;avStop();return;}}
+function avTick(){AV.raf=0;const v=AV.kind&&AV.vids[AV.kind];if(!v||(v.paused&&!v.ended))return;
+ if(v.ended||v.currentTime>=AV.end-.03){const cb=AV.onend;avStop(true);if(cb)cb();if(!AV.kind)avShow(false);return;}
+ const cv=avCanvas(),ready=v.readyState>=2&&!v.seeking;
+ if(cv&&ready){try{avDraw(AV.gl,cv,v);avShow(true);}catch(e){AV.on=false;avStop();return;}}
+ if(ready&&AV.onstart){const f=AV.onstart;AV.onstart=null;f();}   // her voice really starts now: the text may start typing
  AV.raf=requestAnimationFrame(avTick);}
+function avDraw(gl,cv,v){gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,v);gl.viewport(0,0,cv.width,cv.height);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);gl.drawArrays(gl.TRIANGLE_STRIP,0,4);}
+/* she is never a picture: alina-idle.mp4 (standing, breathing, blinking; built forth-and-back so it loops without a seam)
+   plays all the time on its own canvas under the clips; the still picture shows only until its first frame is drawn */
+const IDLE={cv:null,gl:null,raf:0};
+function avIdle(){if(!AV.on||!ALINA_VID.idle)return;const cv=document.querySelector('#coach canvas.avidle');if(!cv)return;
+ if(cv!==IDLE.cv){IDLE.cv=cv;IDLE.gl=avGL(cv);}if(!IDLE.gl)return;
+ const v=avVid('idle');v.loop=true;if(v.paused){const p=v.play();if(p&&p.catch)p.catch(()=>{});}
+ if(!IDLE.raf){const tick=()=>{IDLE.raf=0;if(v.paused||COACH.min)return;
+   if(v.readyState>=2&&IDLE.cv&&IDLE.cv.isConnected){avDraw(IDLE.gl,IDLE.cv,v);const f=IDLE.cv.closest('.alinafig');if(f&&!f.classList.contains('vidle'))f.classList.add('vidle');}
+   IDLE.raf=requestAnimationFrame(tick);};IDLE.raf=requestAnimationFrame(tick);}}
 /* play [from,to) of a file. sound=true tries her voice and falls back to silent lips when the browser refuses */
 function avPlay(kind,from,to,o){o=o||{};if(!AV.on||(!avCanvas()&&!o.audio))return false;
+ if(AV_SPLIT&&o.key){kind='k:'+o.key;to-=from;from=0;}
  if(matchMedia('(prefers-reduced-motion: reduce)').matches&&!o.sound)return false;
  const v=avVid(kind);if(AV.kind&&AV.kind!==kind)AV.vids[AV.kind].pause();
- AV.kind=kind;AV.end=to;AV.onend=o.onend||null;AV.sound=!!o.sound;v.muted=!o.sound;
+ AV.kind=kind;AV.end=to;AV.lips=!!o.lips;AV.onend=o.onend||null;AV.onstart=o.onstart||null;AV.sound=!!o.sound;v.muted=!o.sound;
  try{v.currentTime=from;}catch(e){}
  const go=()=>{if(!AV.raf)AV.raf=requestAnimationFrame(avTick);};
  const p=v.play();if(p&&p.then)p.then(go,()=>{if(!v.muted){v.muted=true;AV.sound=false;v.play().then(go,()=>avStop());}else avStop();});else go();
  return true;}
-function avStop(keep){const v=AV.kind&&AV.vids[AV.kind];if(v){v.pause();v.muted=true;}AV.kind=null;AV.sound=false;AV.onend=null;
+function avStop(keep){const v=AV.kind&&AV.vids[AV.kind];if(v){v.pause();v.muted=true;}AV.kind=null;AV.sound=false;AV.lips=false;AV.onend=null;
  if(AV.raf){cancelAnimationFrame(AV.raf);AV.raf=0;}if(!keep)avShow(false);}
-const avSpeaking=()=>!!(AV.kind==='talk'&&AV.sound);
+const avSpeaking=()=>!!(AV.sound&&AV.kind&&!AV.lips);
 /* silent lips for any text: a random piece of the speech, chained until the typing stops */
-const AV_LIPS=[...Object.keys(AV_LINES),...Object.keys(AV_LINES2).filter(k=>AV_LINES2[k][1]-AV_LINES2[k][0]>1.5)];
-function avLips(){const [a,b,,kind]=avLine(AV_LIPS[Math.floor(Math.random()*AV_LIPS.length)]);
- avPlay(kind,a,b,{onend:()=>{if(COACH.talk||(window.speechSynthesis&&speechSynthesis.speaking))avLips();}});}
+const AV_LIPS=[...Object.keys(AV_LINES),...[AV_LINES2,...Object.values(AV_MORE)].flatMap(o=>Object.keys(o).filter(k=>o[k][1]-o[k][0]>1.5))];
+function avLips(){const more={lips:true,onend:()=>{if(COACH.talk||(window.speechSynthesis&&speechSynthesis.speaking))avLips();}};
+ if(AV_SPLIT){const s=Math.random()*4;avPlay('k:lips',s,s+2.5+Math.random()*1.5,more);return;}   // one small looped file
+ const [a,b,,kind]=avLine(AV_LIPS[Math.floor(Math.random()*AV_LIPS.length)]);avPlay(kind,a,b,more);}
+/* the files she needs first are fetched while the page settles: lips, the wave and her first words */
+function avWarm(){if(!AV_SPLIT||AV.warm||!AV.on)return;AV.warm=1;
+ const hr=new Date().getHours();
+ setTimeout(()=>[ALINA_VID.face?'':'lips','wave',hr<5?'night':hr<12?'morning':hr<18?'day':'evening'].filter(Boolean).forEach(k=>{avVid('k:'+k).keep=1;}),1200);}
 /* her voice for several recorded pieces one after another (workout player); works even when the corner Alina is hidden */
 function avVoice(keys){if(!AV.on||LANG!=='ru'||!AV.unlocked)return false;const ls=keys.map(avLine);if(ls.some(l=>!l))return false;
- const go=i=>{const l=ls[i];if(!l)return;avPlay(l[3],l[0],l[1],{sound:true,audio:true,onend:()=>go(i+1)});};go(0);return true;}
+ const go=i=>{const l=ls[i];if(!l)return;avPlay(l[3],l[0],l[1],{key:l[4],sound:true,audio:true,onend:()=>go(i+1)});};go(0);return true;}
 /* the workout player's spoken texts that she has recorded (Russian only); anything else stays with the browser voice */
-const AV_SAY={'Другая сторона':['side'],'Подход выполнен':['ready'],'Начали!':['cont'],'один':['n1'],'два':['n2'],'три':['n3'],
- 'Отлично, держим!':['great','hold'],'Ещё чуть-чуть!':['push'],'Ты сильнее, чем думаешь!':['push'],'Дыши ровно!':['inhale','exhale'],'Красиво работаешь!':['great']};
+const AV_SAY={'Другая сторона':['side'],'Подход выполнен':['setdone'],'Начали!':['forward'],'один':['n1'],'два':['n2'],'три':['n3'],
+ 'Отлично, держим!':['great','hold'],'Ещё чуть-чуть!':['push'],'Ты сильнее, чем думаешь!':['stronger'],'Дыши ровно!':['breathe'],'Красиво работаешь!':['nice'],'Половина позади!':['half']};
+const AV_REST={30:'rest30',45:'rest45',60:'rest60',90:'rest90'},AV_SET={2:'set2',3:'set3',4:'set4'};
+/* the day's workout style -> her line about it (coach greeting) */
+const AV_STYLE={yoga:'yoga',pilates:'pilates',stretch:'stretch2',fight:'box',boxing:'box',dance:'dance',run:'run',cardio:'run'};
 function avSay(t){t=String(t).trim();let k=AV_SAY[t];
  if(!k&&/^\d+$/.test(t)&&+t>=1&&+t<=10)k=['n'+t];
  if(!k&&/^Отдых\. Далее/.test(t))k=['rest','next'];
- if(!k&&/^Отдых \d/.test(t))k=['rest'];
- if(!k&&/^Подход \d+\./.test(t))k=['cont'];
+ if(!k&&/^Отдых \d/.test(t))k=[AV_REST[+t.match(/\d+/)[0]]||'rest'];
+ if(!k&&/^Подход \d+\./.test(t))k=[AV_SET[+t.match(/\d+/)[0]]||'cont'];
  if(!k&&/тренировка выполнена/.test(t))k=['wdone'];
  if(!k&&/Спина скажет спасибо/.test(t))k=['great'];
  if(!k||!avVoice(k))return false;try{speechSynthesis.cancel();}catch(e){}return true;}
 /* called by coachNext(): returns the typing speed (ms per letter) when her real voice plays, so text and voice end together */
 function avMessage(m){if(!AV.on)return 0;
- const ln=m.line&&avLine(m.line);
- if(ln&&LANG==='ru'&&AV.unlocked&&(m.force||avSoundOn())){
-  const ok=avPlay(ln[3],ln[0],ln[1],{sound:true,onend:()=>{if(COACH.cur===m&&m.auto)coachNext();}});
-  if(ok)return Math.max(20,Math.min(90,(ln[1]-ln[0])*1000/m.text.length));}
+ const ls=m.line?[].concat(m.line).map(avLine):[];
+ if(ls.length&&ls.every(Boolean)&&LANG==='ru'&&AV.unlocked&&(m.force||avSoundOn())){
+  const go=i=>{const l=ls[i];return avPlay(l[3],l[0],l[1],{key:l[4],sound:true,onend:()=>{if(COACH.cur!==m)return;if(i+1<ls.length)go(i+1);else if(m.auto)coachNext();}});};
+  if(go(0))return Math.max(20,Math.min(90,ls.reduce((a,l)=>a+l[1]-l[0],0)*1000/m.text.length));}
  const mv=AV_MOVES[m.mood];
- if(mv)avPlay('move',mv[0],mv[1],{onend:()=>{if(COACH.cur===m&&COACH.talk)avLips();}});
- else avLips();
+ if(mv)avPlay('move',mv[0],mv[1],{key:m.mood,onend:()=>{if(COACH.cur===m&&COACH.talk&&!ALINA_VID.face)avLips();}});
+ else if(!ALINA_VID.face)avLips();   // with her face pieces the lips move on the still, letter by letter (extras.js)
  return 0;}
 /* her whole speech, line by line, with subtitles in the bubble */
 function avIntro(){const ks=Object.keys(AV_LINES),n=ks.length-1;
@@ -7088,10 +7211,11 @@ function coachMount(){if($('#coach'))return;const d=document.createElement('div'
   if(ev.target.closest('#cfig')){if(COACH.typing)coachFinish();else if(COACH.q.length)coachNext();else coachTip();}});
  const loop=now=>{requestAnimationFrame(loop);if(COACH.min||document.hidden||now-COACH.last<45)return;COACH.last=now;coachDraw(now);};requestAnimationFrame(loop);coachDraw(performance.now());
  /* fetch her videos ahead (≈7 MB), unless the phone asks to save data */
- if(AV.on&&!(navigator.connection&&(navigator.connection.saveData||/2g/.test(navigator.connection.effectiveType||''))))setTimeout(()=>{avVid('move');avVid('talk');},1200);}
+ if(AV.on&&!(navigator.connection&&(navigator.connection.saveData||/2g/.test(navigator.connection.effectiveType||''))))avWarm();}
 function coachMin(on){COACH.min=on;const c=$('#coach');if(c)c.classList.toggle('min',on);try{localStorage.setItem('coach-min',on?'1':'0');}catch(e){}}
 function coachDraw(now){const el=$('#cfig');if(!el)return;if(COACH.mood!=='idle'&&now>COACH.moodUntil)COACH.mood='idle';const c=$('#coach'),round=who()==='kid';if(!el.firstChild||el.dataset.kind!==(round?'r':'f')){el.dataset.kind=round?'r':'f';el.innerHTML=round?alinaPortrait('a-float'):alinaFigure();el.querySelectorAll('img.af').forEach(i=>i.decode&&i.decode().catch(()=>{}));}if(c){c.classList.toggle('round',round);c.classList.toggle('talk',!!COACH.talk);c.dataset.mood=COACH.mood;}
- const f=!round&&el.querySelector('.alinafig');if(f){alinaBlink(f,now);const m=alinaMouth(now);if(f.dataset.mouth!==m)f.dataset.mouth=m;}}
+ const f=!round&&el.querySelector('.alinafig');if(f&&AV.on){avIdle();avIdleGesture(now);}
+ if(f){alinaBlink(f,now);const m=f.classList.contains('vmode')?alinaVMouth(now):alinaMouth(now);if(f.dataset.mouth!==m)f.dataset.mouth=m;}}
 /* face of the floating Alina. Blinks are played by the browser (Web Animations, its own exact timing and smooth crossfades
    open → half → closed → half → open), so they don't stutter on the 45 ms coach tick; sometimes twice in a row.
    While she talks the mouth follows the letters being typed: ''(the picture's own "э")|A|O|C */
@@ -7103,6 +7227,17 @@ function alinaBlink(f,now){if(now<FACE.next)return;
  if(c&&h&&c.animate&&!matchMedia('(prefers-reduced-motion: reduce)').matches){c.animate(BLINK_C,{duration:BLINK_MS});h.animate(BLINK_H,{duration:BLINK_MS});}
  FACE.twice=!FACE.twice&&Math.random()<.18;FACE.next=now+(FACE.twice?BLINK_MS+140:2600+Math.random()*4200);}
 const faceVis=ch=>/[аяa]/i.test(ch)?'A':/[оуюёыou]/i.test(ch)?'O':/[мбпвфmbpvf\s.,!?…—-]/i.test(ch)?'C':'';
+/* the video Alina's lips on the still (pieces from her own talking frames): a shape per letter while the text is typed */
+const vfaceVis=ch=>/[аяa]/i.test(ch)?(Math.random()<.5?'m4':'m3'):/[оёуюou]/i.test(ch)?'mO':/[еэиыeiy]/i.test(ch)?'m2':/[мбпmbp]/i.test(ch)?'mC':/[а-яa-z]/i.test(ch)?'m1':'';
+function alinaVMouth(now){
+ if(!COACH.talk||AV.kind)FACE.mouth='';
+ else if(now>=FACE.until){const t=COACH.cur?COACH.cur.text:'';FACE.mouth=vfaceVis(t[COACH.pos||0]||' ');FACE.until=now+90+Math.random()*50;}
+ return FACE.mouth;}
+/* she is alive while nobody talks to her: now and then she waves or shows a thumbs up on her own */
+function avIdleGesture(now){if(!FACE.gest){FACE.gest=now+25000+Math.random()*20000;return;}
+ if(now<FACE.gest)return;FACE.gest=now+50000+Math.random()*50000;
+ if(COACH.talk||COACH.min||AV.kind||document.hidden)return;
+ const k=Math.random()<.6?'wave':'cheer',mv=AV_MOVES[k];avPlay('move',mv[0],mv[1],{key:k});}
 function alinaMouth(now){
  if(!COACH.talk||COACH.mood!=='idle')FACE.mouth='C';
  else if(now>=FACE.until){const t=COACH.cur?COACH.cur.text:'';let v=faceVis(t[COACH.pos||0]||' ');if(v===FACE.mouth&&v!=='C')v=v===''?'A':'';FACE.mouth=v;FACE.until=now+85+Math.random()*60;}
@@ -7114,8 +7249,10 @@ function coachNext(){const m=COACH.q.shift();if(!m){const b=$('#cbub');if(b)b.hi
  COACH.mood=m.mood;COACH.moodUntil=performance.now()+(m.mood==='idle'?0:2000);COACH.talk=true;clearInterval(COACH.typing);let i=0;COACH.pos=0;
  const ms=avMessage(m);
  if(!avSpeaking()&&ST_()&&ST_().coachVoice)say(m.text);
- COACH.typing=setInterval(()=>{i+=1;COACH.pos=i;tx.textContent=m.text.slice(0,i);if(i>=m.text.length)coachFinish();},ms||34);}
-function coachFinish(){clearInterval(COACH.typing);COACH.typing=null;COACH.talk=false;if(AV.kind==='talk'&&!avSpeaking()&&!(window.speechSynthesis&&speechSynthesis.speaking))avStop();if(!COACH.cur)return;$('#ctext').textContent=COACH.cur.text;coachButtons();}
+ /* with her real voice the text starts together with the voice (the clip may need a moment to load), not before it */
+ const type=()=>{if(COACH.cur!==m||m.started)return;m.started=1;clearInterval(COACH.typing);COACH.typing=setInterval(()=>{i+=1;COACH.pos=i;tx.textContent=m.text.slice(0,i);if(i>=m.text.length)coachFinish();},ms||34);};
+ if(ms){AV.onstart=type;setTimeout(type,2500);}else type();}
+function coachFinish(){clearInterval(COACH.typing);COACH.typing=null;COACH.talk=false;if(COACH.cur)COACH.cur.started=1;if(AV.lips&&!(window.speechSynthesis&&speechSynthesis.speaking))avStop();if(!COACH.cur)return;$('#ctext').textContent=COACH.cur.text;coachButtons();}
 function coachButtons(){const m=COACH.cur;if(!m||COACH.typing)return;const ac=$('#cact');if(!ac)return;
  ac.innerHTML=m.acts.map(a=>a[1][0]==='@'?`<button class="btn" data-co="${a[1].slice(1)}">${esc(a[0])}</button>`:a[1][0]==='#'?`<a class="btn" href="${a[1]}">${esc(a[0])}</a>`:`<button class="btn" data-act="${a[1]}">${esc(a[0])}</button>`).join('')+(COACH.q.length?`<button class="btn pri" data-co="next">${L('Дальше ›')}</button>`:'');}
 function coachTip(){const t=todayIso(),tip=bioTipFor(t,cycleInfo(t)),q=QUOTES[Math.floor(Math.random()*QUOTES.length)];
@@ -7123,6 +7260,7 @@ function coachTip(){const t=todayIso(),tip=bioTipFor(t,cycleInfo(t)),q=QUOTES[Ma
  /* her own recorded phrases: on the website they play with her real voice */
  ['here','perfect','proud','calm','start','keep','care','believe'].forEach(k=>pool.push([L(AV_LINES[k][2]),'idle',k]));
  ['water','stretch','feel','withyou'].forEach(k=>pool.push([L(AV_LINES2[k][2]),'idle',k]));
+ ['protein','veg','snack','glass','sleepfirst','three','thoughts','wavefeel','heart','worth','compare','restprog','knees','nohold','dizzy'].forEach(k=>pool.push([L(avLine(k)[2]),'idle',k]));
  if(AV.on&&LANG==='ru')pool.push([L('Хочешь, расскажу о себе? Это займёт минуту.'),'wave','','@intro']);
  const x=pool[Math.floor(Math.random()*pool.length)];coachSay(x[0],{mood:x[1],line:x[2]||undefined,acts:x[3]?[[L('▶️ Послушать Алину'),x[3]]]:x[1]==='wave'?[[L('💬 Поговорить'),'#/friend']]:[]});}
 function coachGreet(){if(COACH.greeted||!ST_())return;COACH.greeted=true;const s=ST_(),t=todayIso(),pd=progDay(t),hr=new Date().getHours(),nm=NM(),N=NW();
@@ -7132,6 +7270,8 @@ function coachGreet(){if(COACH.greeted||!ST_())return;COACH.greeted=true;const s
   coachSay(L(AV_LINES.hello[2]),{mood:'wave',line:'hello',acts:AV.on&&LANG==='ru'?[[L('▶️ Послушать Алину'),'@intro']]:[]});
   coachSay(L('{0}, {1}! 💛 Я составила программу именно под тебя: {2} {3}, {4} {5} в неделю по ~{6} минут.',hi,nm,N,plural(N,'неделя','недели','недель'),s.days||5,plural(s.days||5,'тренировка','тренировки','тренировок'),s.mins||60),{mood:'wave'});
   if(!s.noCount)coachSay(isLose()?L('Твоя норма — около {0} ккал и {1} г белка в день. Ниже {2} ккал не опускаемся никогда: так уходит жир, а волосы, гормоны и мышцы остаются с тобой.',nr.kcal,nr.p,nr.floor):L('Твоя норма — около {0} ккал и {1} г белка в день. Без голодания: тело строит мышцы.',nr.kcal,nr.p),{mood:'point',acts:[[L('Подробнее'),'#/food']]});
+  if(isPreg())coachSay(L('Беременность — только с разрешения врача и в щадящем режиме.'),{line:'preg'});
+  else if(isLose()&&!s.noCount)coachSay(L('Не голодай: так уходят мышцы и волосы, а не жир.'),{line:'nostarve'});
   coachSay(L('Нажми на меня в любой момент — подскажу. А в разделе «Подружка-тренер» можно поговорить со мной о чём угодно.'),{mood:'point',acts:[[L('💬 Поговорить'),'#/friend']]});return;}
  const away=AUTOSAVED?diffD(P(AUTOSAVED),P(t)):0;
  coachSay(AUTOSAVED?L('{0}, {1}! 💛 Вчерашний день я сохранила — начинаем новый.',hi,nm):L('{0}, {1}! 💛',hi,nm),{mood:'wave',line:hr<5?'night':hr<12?'morning':hr<18?'day':'evening'});
@@ -7139,15 +7279,20 @@ function coachGreet(){if(COACH.greeted||!ST_())return;COACH.greeted=true;const s
  if(pd.dow===0&&pd.week>1&&pd.week<=N)coachSay(L('Новая неделя, новые силы!'),{line:'week'});
  {const y=iso(addD(P(t),-1)),py=progDay(y);if(away<3&&py.d>=0&&py.week<=N&&!planDay(y).base.rest&&!getDay(y).done)coachSay(L('Пропустила тренировку? Ничего страшного, продолжаем.'),{line:'missed'});}
  {const k=avLineOfDay();coachSay(L(AV_LINES[k][2]),{line:k});}
+ if(who()==='kid')coachSay(L('Привет, малышка! Ты настоящая чемпионка!'),{mood:'wave',line:['baby','champ']});
+ else if(who()==='senior')coachSay(L('Береги суставы, двигайся плавно.'),{line:'joints'});
+ if(pd.d===30)coachSay(L('Месяц с нами, ты невероятная!'),{mood:'cheer',line:'month1'});
+ if(hr>=18&&!getDay(t).mood)coachSay(L('Отметь настроение.'),{line:'mood',acts:[[L('Открыть дневник'),'#/journal']]});
+ if(hr>=22||hr<2)coachSay(L('Пора готовиться ко сну. Отложи телефон за час до сна.'),{line:['bedtime','phone']});
  analyzeRecent(7).filter(f=>f.sev==='urgent'||f.sev==='doctor').slice(0,2).forEach(f=>coachSay(`${L('Меня беспокоит:')} ${L(f.title).toLowerCase()}. ${f.who?L('К кому обратиться:')+' '+L(f.who)+'. ':''}${f.tests?L('Что сдать:')+' '+L(f.tests)+'.':''}`,{mood:'think',acts:[[L('Открыть дневник'),'#/journal']]}));
  {const wr=analyzeRecent(7).filter(f=>f.sev==='urgent'||f.sev==='doctor').slice(0,2);if(wr.length)coachSay(L(AV_LINES.doctor[2]),{mood:'idle',line:'doctor'});}
  if(pd.d<0)coachSay(L('До старта {0} {1}. Пройди по списку подготовки на экране — и мы готовы!',-pd.d,plural(-pd.d,'день','дня','дней')),{mood:'point'});
  else if(pd.week<=N){const pl=planDay(t),nr=normFor(t),dd=getDay(t);
   if(pl.base.rest)coachSay(L('Сегодня день отдыха: прогулка и норма шагов — и всё отлично.'),{mood:'idle',line:'restday'});
   else if(dd.done)coachSay(L('Тренировка уже сделана — ты умница! 🎉'),{mood:'cheer',line:'wdone'});
-  else coachSay(L('Сегодня «{0}», около {1} минут. Нажми «▶ Начать тренировку» — я буду считать вслух.',L(pl.base.t),estMin(pl.blocks)),{mood:'point'});
+  else coachSay(L('Сегодня «{0}», около {1} минут. Нажми «▶ Начать тренировку» — я буду считать вслух.',L(pl.base.t),estMin(pl.blocks)),{mood:'point',line:[AV_STYLE[pl.base.style]||'todaywk','pressgo']});
   if(pl.autoLight)coachSay(L('Я облегчила сегодняшнюю тренировку по твоему циклу и самочувствию. Береги себя 💛'),{mood:'idle',line:'light'});
-  coachSay(s.noCount?L('Сегодня: вода {0} л, шаги {1}, белок в каждый приём.',fmtN(nr.water),fmtI(nr.steps)):L('Твоя норма сегодня: {0} ккал, белок {1} г, вода {2} л, шаги {3}.',nr.kcal,nr.p,fmtN(nr.water),fmtI(nr.steps)),{mood:'idle'});}
+  coachSay(s.noCount?L('Сегодня: вода {0} л, шаги {1}, белок в каждый приём.',fmtN(nr.water),fmtI(nr.steps)):L('Твоя норма сегодня: {0} ккал, белок {1} г, вода {2} л, шаги {3}.',nr.kcal,nr.p,fmtN(nr.water),fmtI(nr.steps)),{mood:'idle',line:s.noCount?'protein':'normscreen'});}
  if(hr>=5&&hr<12&&!s.noCount&&who()!=='kid'&&pd.d>=0&&!getDay(t).w)coachSay(L('Запиши сегодня свой вес.'),{line:'weigh',acts:[[L('Открыть дневник'),'#/journal']]});
  phaseGreet(t);monthGreet();
  {const tp=todayTips(t);if(tp[0])coachSay(L('Совет на сегодня ({0}): {1}. {2}',L(tp[0].why),L(tp[0].title),L(tp[0].how)),{mood:'point',acts:[[L('Все советы'),'#/today']]});}
@@ -7746,6 +7891,55 @@ function lastMeas(){const ks=Object.keys(S.days).sort().reverse();for(const k of
 {const base=vHealth;vHealth=function(){return base()+healthGuidesHtml();};}
 document.addEventListener('click',ev=>{const b=ev.target.closest('[data-mood]');if(!b)return;const[i,v]=b.dataset.mood.split(':').map(Number);MOOD[i]=v;route();});
 
+/* ---- chatbot.js ---- */
+/* ============ ALINA'S BUILT-IN CHAT (no AI needed) ============
+   The knowledge base (src/chatkb/*.js, thousands of written answers) is a separate file on the website, loaded when the
+   chat or the psychologist page opens; single-file builds have it inline. A reply = an opener that answers her mood
+   (tired, anxious, proud…) + the best matching topic answer (a different variant each time) + sometimes a personal fact
+   (her calories, today's workout) + a closing question or a short motivating line. */
+const CB={kb:[],emo:{},close:{},motiv:[],used:{},last:null,loading:null,loaded:false};
+/* rows: [id, regex (ru and en words together), [ru answers], [en answers], options]
+   options: {adult:1} = not for kids mode, {diet:1} = weight-loss advice (hidden in gentle mode), {pri:n} = priority bonus */
+function kbAdd(tag,rows){rows.forEach(r=>CB.kb.push({id:r[0],tag,re:new RegExp(r[1],'gi'),ru:r[2],en:r[3]||[],o:r[4]||{}}));CB.loaded=true;}
+function kbEmo(o){Object.assign(CB.emo,o);}
+function kbClose(o){Object.assign(CB.close,o);}
+function kbMotiv(rows){CB.motiv.push(...rows);}
+/* website: fetch the base the first time it is needed */
+function cbLoad(){if(CB.loaded||!window.CHATKB_SRC)return Promise.resolve();if(CB.loading)return CB.loading;
+ return CB.loading=new Promise(res=>{const sc=document.createElement('script');sc.src=window.CHATKB_SRC;sc.onload=res;sc.onerror=()=>{CB.loading=null;res();};document.head.appendChild(sc);});}
+const cbNorm=s=>String(s).toLowerCase().replace(/ё/g,'е');
+/* a different variant every time (no repeats until all have been used) */
+function cbPick(key,arr){if(!arr||!arr.length)return'';let u=CB.used[key];if(!u||u.length>=arr.length)u=CB.used[key]=[];
+ const free=arr.map((_,i)=>i).filter(i=>!u.includes(i)),i=free[Math.floor(Math.random()*free.length)];u.push(i);return arr[i];}
+/* the most specific topic: the longest total matched text wins, then priority */
+function cbMatch(t,pref){const kid=who()==='kid',gentle=!!(H().ed||H().care),en=LANG!=='ru';let best=null;
+ for(const it of CB.kb){if(kid&&it.o.adult)continue;if(gentle&&it.o.diet)continue;if(en&&!it.en.length)continue;
+  it.re.lastIndex=0;const m=t.match(it.re);if(!m)continue;
+  const sc=m.reduce((a,x)=>a+x.length,0)+m.length*4+(it.o.pri||0)+(pref&&it.tag===pref?6:0)+(CB.last===it.id?-2:0);
+  if(!best||sc>best.sc)best={it,sc};}
+ return best&&best.it;}
+function cbMood(t){for(const k in CB.emo){const e=CB.emo[k];e.re.lastIndex=0;if(e.re.test(t))return k;}return null;}
+/* personal facts the answers may use: {kcal} {p} {water} {steps} {plan} {min} {name} */
+function cbFill(s){if(!/\{/.test(s))return s;const d=todayIso();let nr={},pl=null,pd={};
+ try{nr=normFor(d);pd=progDay(d);pl=pd.d>=0&&pd.week<=NW()?planDay(d):null;}catch(e){}
+ const name=(ST_()&&ST_().name)||'';
+ return s.replace(/\{kcal\}/g,nr.kcal||'—').replace(/\{p\}/g,nr.p||'—').replace(/\{water\}/g,nr.water||'2').replace(/\{steps\}/g,(nr.steps||8000).toLocaleString('ru-RU'))
+  .replace(/\{plan\}/g,pl?(pl.base.rest?L('день отдыха'):'«'+L(pl.base.t)+'»'):L('подготовка к старту'))
+  .replace(/\{min\}/g,pl&&!pl.base.rest?estMin(pl.blocks):'20').replace(/\{name\}/g,name).replace(/,\s*\{name\}/g,'');}
+const cbMotivLine=()=>{if(!CB.motiv.length)return'';const r=cbPick('motiv',CB.motiv);return LANG==='ru'?r[0]:r[1];};
+/* the whole reply; null when the base isn't here (the old built-in tips answer then) */
+function cbReply(text,pref){if(!CB.loaded)return null;const t=cbNorm(text),en=LANG!=='ru',lg=en?'en':'ru';
+ const it=cbMatch(t,pref),mood=cbMood(t);CB.hit=!!it;
+ const op=mood&&CB.emo[mood][lg]&&(!it||it.tag!=='psy'||Math.random()<.5)?cbPick('e:'+mood+lg,CB.emo[mood][lg]):'';
+ let body;
+ if(it){CB.last=it.id;body=cbPick(it.id+lg,it[lg]);}
+ else if(mood&&CB.close['m:'+mood])body=cbPick('m:'+mood+lg,CB.close['m:'+mood][lg]);
+ else body=cbPick('none'+lg,CB.close.none[lg]);
+ const tag=it?it.tag:mood?'psy':'',cl=CB.close[tag];
+ const r=Math.random();let end='';
+ if(cl&&cl[lg]&&r<.55)end=cbPick('c:'+tag+lg,cl[lg]);else if(r<.8)end='✨ '+cbMotivLine();
+ return cbFill([op,body,end].filter(Boolean).join('\n\n'));}
+
 /* ---- ai.js ---- */
 /* ============ AI FRIEND-COACH ============
    Live chat with Claude through the artifact's `sample` capability (spends the viewer's own Claude usage,
@@ -7803,7 +7997,7 @@ function aiTools(){if(!AI.tools)return undefined;return[
   execute(i){const t=todayIso(),m=String(i.mode);if(m==='light')setDay(t,'light',true);else if(m==='knees')setDay(t,'knee',true);else if(m==='normal'){setDay(t,'light',null);setDay(t,'knee',null);setDay(t,'normal',true);}else throw new Error('unknown mode');AI.changed=true;return'done';}}];}
 function mdLite(s){return esc(s).replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>').replace(/\n/g,'<br>');}
 function chatBubble(m){return`<div class="msg ${m.role==='user'?'me':'her'}${m.err?' err':''}"><div class="mb">${m.role==='user'?esc(m.content).replace(/\n/g,'<br>'):mdLite(m.content)}</div></div>`;}
-function vFriend(arg){const msgs=S.chat||[];
+function vFriend(arg){cbLoad();const msgs=S.chat||[];
  let h=`<div class="chatwrap"><div class="chathead"><div class="chatava">${alinaPortrait('a-head')}</div><div><h1 class="page-h" style="margin:0">${L('Алина — подружка-тренер')}</h1><div class="small muted" id="aistat"></div></div></div>
  <div class="chatlog" id="chatlog">${msgs.length?msgs.map(chatBubble).join(''):`<div class="msg her"><div class="mb">${mdLite(L('Привет, {0}! 💛 Я Алина — твоя подружка и тренер. Я вижу твой план, нормы и записи — спрашивай что угодно: про еду, тренировки, цикл, мотивацию. Или просто расскажи, как прошёл день.',NM()))}</div></div>`}</div>
  <div class="seg" style="margin:6px 0"><button data-psymode="0" class="${PSY.on?'':'on'}">${L('💬 Подружка-тренер')}</button><button data-psymode="1" class="${PSY.on?'on':''}">${L('🧠 Режим психолога')}</button></div>${PSY.on?`<div class="note info small">${L('Режим психолога: Алина слушает и помогает справиться с чувствами 💗')} <a href="#/psy">${L('Упражнения →')}</a></div>`:''}<div class="chips" id="quick">${(PSY.on?PSY_QUICK:QUICK).map(q=>`<button data-quick="${esc(L(q[1]))}">${q[0]} ${esc(L(q[1]))}</button>`).join('')}</div>
@@ -7817,7 +8011,7 @@ function chatPush(m){S.chat=S.chat||[];S.chat.push(Object.assign({ts:Date.now()}
 async function chatSend(text){text=String(text||'').trim();if(!text||AI.busy)return;AI.draft='';const q=$('#chatq');if(q)q.value='';
  chatPush({role:'user',content:text});const log=$('#chatlog');if(log){log.insertAdjacentHTML('beforeend',chatBubble({role:'user',content:text}));}
  const f=analyzeText(text).filter(x=>x.sev==='urgent');
- if(AI.state!=='ready'||!AI.sample){const r=builtinReply(text);chatPush({role:'assistant',content:r,local:true});if(log)log.insertAdjacentHTML('beforeend',chatBubble({role:'assistant',content:r}));chatScroll();return;}
+ if(AI.state!=='ready'||!AI.sample){await cbLoad();const r=builtinReply(text);chatPush({role:'assistant',content:r,local:true});if(log)log.insertAdjacentHTML('beforeend',chatBubble({role:'assistant',content:r}));chatScroll();return;}
  if(log)log.insertAdjacentHTML('beforeend',`<div class="msg her" id="live"><div class="mb"><span class="typing"><i></i><i></i><i></i></span> ${f.length?'':L('думаю…')}</div></div>`);chatScroll();
  AI.busy=true;AI.changed=false;AI.ctl=new AbortController();$('#chatsend').disabled=true;$('#chatstop').hidden=false;
  const turns=(S.chat||[]).filter(m=>!m.err&&!m.local).slice(-16).map(m=>({role:m.role,content:m.content}));while(turns.length&&turns[0].role!=='user')turns.shift();
@@ -7837,7 +8031,10 @@ async function chatSend(text){text=String(text||'').trim();if(!text||AI.busy)ret
    chatPush(AI.state==='ready'?{role:'assistant',content:msg,err:true}:{role:'assistant',content:msg,local:true});if(b){b.removeAttribute('id');b.querySelector('.mb').innerHTML=mdLite(msg);}}
  }finally{AI.busy=false;AI.ctl=null;const sb=$('#chatsend'),st=$('#chatstop');if(sb)sb.disabled=false;if(st)st.hidden=true;chatScroll();if(AI.changed){computeAll();toast(L('Подружка обновила данные дня ✓'));}}}
 function builtinReply(text){if(PSY.on&&!builtinReply.inner){builtinReply.inner=true;try{return psyReply(text);}finally{builtinReply.inner=false;}}const t=text.toLowerCase(),d=todayIso(),nr=normFor(d),pd=progDay(d),f=analyzeText(text).sort((a,b)=>SEVO[a.sev]-SEVO[b.sev]);
- if(f.length&&f[0].sev!=='good'){const x=f[0];return`${SEVI[x.sev]} **${L(x.title)}.** ${L(x.text)}${x.who?'\n'+L('К кому обратиться:')+' '+L(x.who)+'.':''}${x.tests?'\n'+L('Что сдать:')+' '+L(x.tests)+'.':''}`;}
+ if(f.length&&f[0].sev!=='good'){const x=f[0];
+  if(x.sev!=='urgent'&&Math.random()<.5){const cb=cbReply(text);if(cb&&CB.hit)return cb;}   // not urgent: her chat answers half of the time, for variety
+  return`${SEVI[x.sev]} **${L(x.title)}.** ${L(x.text)}${x.who?'\n'+L('К кому обратиться:')+' '+L(x.who)+'.':''}${x.tests?'\n'+L('Что сдать:')+' '+L(x.tests)+'.':''}`;}
+ const cb=cbReply(text);if(cb)return cb;
  if(/ед[аы]|есть|съесть|меню|завтрак|обед|ужин|калори|белок|food|eat|meal|menu|breakfast|lunch|dinner|calor|protein/.test(t))return ST_().noCount?L('Сегодня едим по методу тарелки: ладонь белка, кулак крупы, 2 кулака овощей и немного жиров. Белок в каждый приём 💛 Примеры — в разделе «Питание».'):L('Твоя норма сегодня — {0} ккал и {1} г белка. Например: завтрак — яйца + творог + овсянка, обед — курица + гречка + овощи, перекус — греческий йогурт, ужин — рыба + картофель + салат. Больше примеров — в разделе «Питание» 💛',nr.kcal,nr.p);
  if(/трен|упражн|сил нет|лень|workout|train|exercise|lazy|tired/.test(t)){const pl=pd.d>=0&&pd.week<=NW()?planDay(d):null;return pl?(pl.base.rest?L('Сегодня день отдыха — прогулка и шаги, и этого достаточно 💛'):L('Сегодня «{0}», около {1} минут. Нет сил? Нажми «Облегчить» на экране «Сегодня» — сделаем на подход меньше. Начни хотя бы с разминки: через 10 минут обычно становится легче 💪',L(pl.base.t),estMin(pl.blocks))):L('Программа ещё не началась — загляни в список подготовки на экране «Сегодня».');}
  if(f.length)return`🌟 ${L(f[0].text)}`;
@@ -7970,8 +8167,10 @@ T2(Object.fromEntries(Object.values(PSY_REPLIES).flat()));
 const PSY_LINK={anx:'breath',sad:'activate',angry:'tipp',stress:'pmr',food:'urge',body:'body',shame:'compassion',lonely:'letter',empty:'activate',sleep:'breath',rel:'thought',procr:'activate'};
 function psyReply(text){const t=String(text).toLowerCase().replace(/ё/g,'е'),fs_=analyzeText(text),crisis=fs_.find(x=>x.id==='crisis');
  if(!crisis&&fs_.some(x=>x.sev==='urgent'))return builtinReply(text);
+ if(crisis)avVoice(['crisis']);
  if(crisis)return`🆘 **${L(crisis.title)}.** ${L(crisis.text)}\n\n${psyHelpLines()}`;
- const hit=PSY_RX.find(r=>r[1].test(t)),k=hit?hit[0]:(PSY.last&&/(не помог|не работает|didn'?t help|doesn'?t work)/.test(t)?'any':'any');PSY.last=k;
+ const hit=PSY_RX.find(r=>r[1].test(t));if(!hit){const cb=cbReply(text,'psy');if(cb)return cb;}
+ const k=hit?hit[0]:(PSY.last&&/(не помог|не работает|didn'?t help|doesn'?t work)/.test(t)?'any':'any');PSY.last=k;
  const r=PSY_REPLIES[k],ex=PSY_LINK[k];return`${L(r[0][0])}\n\n${L(r[1][0])}${ex?`\n\n👉 ${L('Упражнение:')} **${L(PSY_EX[ex][1])}** — ${L('открой раздел «Психолог»')}.`:''}\n\n${L(r[2][0])}`;}
 function psyHelpLines(){return LANG==='ru'?L('Экстренная помощь: 112. Экстренная психологическая помощь МЧС России: +7 (495) 989-50-50 (круглосуточно). Детский и подростковый телефон доверия: 8-800-2000-122 (бесплатно).'):L('Emergency: 112 (Europe), 911 (US). Crisis lines: 988 (US), 116 123 Samaritans (UK and Ireland). Or your local emergency number.');}
 T2({'Упражнение:':'Exercise:','открой раздел «Психолог»':'open the Psychologist section','Экстренная помощь: 112. Экстренная психологическая помощь МЧС России: +7 (495) 989-50-50 (круглосуточно). Детский и подростковый телефон доверия: 8-800-2000-122 (бесплатно).':'Emergency: 112. Russia\'s EMERCOM psychological helpline: +7 (495) 989-50-50 (24/7). Children\'s and teens\' helpline: 8-800-2000-122 (free).',
@@ -8023,7 +8222,7 @@ T2({'Вдох носом, выдох медленнее — через рот, �
  'Запиши, за что ты благодарна своему телу сегодня — не за внешность, а за то, что оно умеет.':'Write down what you\'re grateful to your body for today — not how it looks, but what it can do.','Мои ноги прошли 8000 шагов…':'My legs walked 8,000 steps…','Сохранить':'Save','Сегодня было хорошо…':'Today something good was…',
  'Ляг удобно, закрой глаза. Медленно переводи внимание: стопы → голени → колени → бёдра → живот → грудь → руки → плечи → шея → лицо → макушка. На каждой части — 2–3 дыхания. Не нужно ничего менять, просто замечай.':'Lie down comfortably and close your eyes. Slowly move your attention: feet → shins → knees → thighs → belly → chest → arms → shoulders → neck → face → crown. Stay 2–3 breaths on each part. Don\'t change anything, just notice.',
  'Представь, что твоя лучшая подруга оказалась в такой же ситуации. Напиши ей письмо поддержки — а потом прочитай его себе. Можно в «Дневнике».':'Imagine your best friend is in the same situation. Write her a letter of support — then read it to yourself. You can use the Journal.','Открыть дневник →':'Open the journal →'});
-function vPsy(){const P=psyData(),kid=who()==='kid',today=todayIso(),dd=getDay(today).psy;
+function vPsy(){cbLoad();const P=psyData(),kid=who()==='kid',today=todayIso(),dd=getDay(today).psy;
  let h=`<div class="chathead" style="margin-bottom:6px"><div class="chatava">${alinaPortrait('a-head')}</div><div><h1 class="page-h" style="margin:0">${L('Алина — психолог-помощник')}</h1><div class="small muted">${L('Методики КПТ, ACT, DBT и самосострадания. Без осуждения, в своём темпе.')}</div></div></div>`;
  h+=`<div class="note" style="border-left:4px solid var(--bad)"><b>🆘 ${L('Если тебе сейчас очень плохо или есть мысли причинить себе вред')}</b><div class="small">${psyHelpLines()}</div></div>`;
  h+=`<div class="seg seg-wrap" style="margin:10px 0">${[['now','💗 Как ты сейчас'],['tools','🧰 Упражнения'],['topics','📚 Темы'],['chat','💬 Поговорить']].map(t=>`<button data-psytab="${t[0]}" class="${PSYTAB===t[0]?'on':''}">${L(t[1])}</button>`).join('')}</div>`;
@@ -8087,8 +8286,8 @@ function phaseOffer(pl,dd,dIso){if(pl.base.rest&&!dd.soft)return'';
  return'';}
 // Alina mentions the phase once when the app opens
 function phaseGreet(t){const ci=cycleInfo(t),pd=progDay(t);if(!ci||pd.d<0||pd.week>NW())return;const pl=planDay(t),dd=getDay(t);if(dd.done)return;
- if(ci.ph==='men'&&ci.day<=2&&!dd.soft&&!pl.base.rest)coachSay(L('Сегодня {0}-й день месячных. Если тяжело — заменю тренировку на мягкую йогу и растяжку 💛',ci.day),{mood:'idle',acts:[[L('🧘 Мягкая тренировка'),'soft']]});
- else if(!dd.strong&&strongOk(pl,ci))coachSay(L('У тебя сильная фаза цикла 🌱 Тело сейчас готово к большему — попробуем +1 подход?'),{mood:'cheer',acts:[[L('💪 Давай!'),'strong']]});}
+ if(ci.ph==='men'&&ci.day<=2&&!dd.soft&&!pl.base.rest)coachSay(L('Сегодня {0}-й день месячных. Если тяжело — заменю тренировку на мягкую йогу и растяжку 💛',ci.day),{mood:'idle',line:ci.day===1?['day1','cramps']:'cramps',acts:[[L('🧘 Мягкая тренировка'),'soft']]});
+ else if(!dd.strong&&strongOk(pl,ci))coachSay(L('У тебя сильная фаза цикла 🌱 Тело сейчас готово к большему — попробуем +1 подход?'),{mood:'cheer',line:ci.ph==='ovu'?'ovu':'strongday',acts:[[L('💪 Давай!'),'strong']]});}
 
 /* ---------- posture in 5 minutes ----------
    Played in the workout player (startPlayer with a custom workout); each finished session adds 1 to dd.post. */
@@ -8109,7 +8308,7 @@ function vPosture(){const s=ST_(),t=todayIso();
 let POST_NEXT=performance.now()+2*3600e3;
 setInterval(()=>{const s=ST_();if(!s||!s.postRem||document.hidden||(typeof PL!=='undefined'&&PL&&PL.mode!=='done'&&!$('#player').hidden))return;
  const hr=new Date().getHours();if(hr<9||hr>=21||performance.now()<POST_NEXT)return;POST_NEXT=performance.now()+2*3600e3;
- coachSay(L('Пора размяться! 5 минут для осанки — и спина скажет спасибо 🧍‍♀️'),{mood:'point',acts:[[L('▶ За компьютером'),'posture:desk'],[L('Все комплексы'),'#/posture']]});},60000);
+ coachSay(L('Пора размяться! 5 минут для осанки — и спина скажет спасибо 🧍‍♀️'),{mood:'point',line:'posture',acts:[[L('▶ За компьютером'),'posture:desk'],[L('Все комплексы'),'#/posture']]});},60000);
 
 /* ---------- month summary ----------
    Counts only days inside the programme. Weight is shown only as a loss for weight-loss goals, never in gentle or eating-disorder mode. */
@@ -8180,7 +8379,7 @@ async function monthOut(ym,share){const b=await monthPicture(ym);if(!b){toast(L(
  toast(share?L('Поделиться отсюда нельзя — картинка сохранена, отправь её из галереи'):L('Картинка сохранена'));}
 function monthGreet(){const d=new Date(),prev=ymOf(new Date(d.getFullYear(),d.getMonth()-1,1));S.meta=S.meta||{};
  if(d.getDate()>3||S.meta.monthSeen===prev||prev<ST_().start.slice(0,7)||!monthStats(prev).done)return;S.meta.monthSeen=prev;save();
- coachSay(L('Новый месяц! Я подвела итоги прошлого — загляни, там есть чем гордиться 🏆'),{mood:'cheer',acts:[[L('🏆 Итоги месяца'),'#/month/'+prev]]});}
+ coachSay(L('Новый месяц! Я подвела итоги прошлого — загляни, там есть чем гордиться 🏆'),{mood:'cheer',line:'month',acts:[[L('🏆 Итоги месяца'),'#/month/'+prev]]});}
 
 /* ---------- buttons (here, not in router.js: they also come from Alina's bubble) ---------- */
 document.addEventListener('click',ev=>{const b=ev.target.closest('[data-act]');if(!b)return;const a=b.dataset.act,d=($('#view')&&$('#view').dataset.day)||todayIso();
@@ -8267,7 +8466,7 @@ function wzOpt(name,v,label,cur,sub){return`<button class="wopt ${String(cur)===
 function wzMulti(name,v,label,on){return`<button class="wopt ${on?'on':''}" data-wzm="${name}" data-v="${esc(v)}"><b>${L(label)}</b></button>`;}
 // sports that make sense for whom
 const sportsFor=w=>w==='senior'?STYLES.filter(x=>['home','yoga','pilates','stretch','dance','gym'].includes(x[0])):STYLES;
-function wzRender(){const m=$('#modal'),o=WZ.o,st=WZ.step;m.hidden=false;
+function wzRender(){const m=$('#modal'),o=WZ.o,st=WZ.step;m.hidden=false;if(!WZ.said){WZ.said=1;avVoice(['meet']);}
  const age=num(o.age),teen=o.who==='kid'||(age&&age<18),kid=o.who==='kid',sen=o.who==='senior';
  let b='';
  if(st===0)b=`<div style="margin-bottom:8px">${alinaPortrait('a-hello')}</div><h2>${L('Привет! Я Алина — твоя подружка-тренер 💛')}</h2><p class="muted">${L('Ответь на несколько вопросов — и я составлю программу тренировок, питания и привычек именно под тебя. Это займёт 3–5 минут.')}</p>
@@ -8365,7 +8564,7 @@ $('#modal').addEventListener('click',ev=>{if(!WZ)return;const t=ev.target;
  if(a==='cancel'){wzDrop();WZ=null;$('#modal').hidden=true;$('#modal').innerHTML='';return;}
  if(a==='-1'){wzGo(-1);wzRender();return;}
  if(a==='1'){if(!wzCheck())return;wzGo(1);wzRender();$('#modal .box').scrollTop=0;return;}
- if(a==='go'){const s=wzBuild();S.settings=s;_PHK='';if(!WZ.redo){S.meta=S.meta||{};S.meta.created=todayIso();}save();wzDrop();WZ=null;$('#modal').hidden=true;$('#modal').innerHTML='';COACH.greeted=false;if(!S.meta)S.meta={};delete S.meta.intro;route();}});
+ if(a==='go'){const s=wzBuild();S.settings=s;avVoice(['planready']);_PHK='';if(!WZ.redo){S.meta=S.meta||{};S.meta.created=todayIso();}save();wzDrop();WZ=null;$('#modal').hidden=true;$('#modal').innerHTML='';COACH.greeted=false;if(!S.meta)S.meta={};delete S.meta.intro;route();}});
 $('#modal').addEventListener('input',ev=>{if(!WZ)return;const x=ev.target;if(x.dataset.wzf){WZ.o[x.dataset.wzf]=x.value;wzStore();if(x.getAttribute('aria-invalid')){fieldErr(x,false);$('#wzerr').textContent='';}}});
 $('#modal').addEventListener('change',ev=>{if(!WZ)return;const x=ev.target;
  if(x.dataset.wzf)WZ.o[x.dataset.wzf]=x.value;
@@ -8440,7 +8639,7 @@ function setBad(k,v){const s=S.settings,kid=who()==='kid',sen=who()==='senior';
 const DAYR={w:[25,300],steps:[0,100000],kcal:[0,10000],sleep:[0,24]};
 function fieldErr(x,msg){const f=x.closest('.fld')||x.parentElement;let e=f&&f.querySelector('.ferr');
  if(!msg){x.removeAttribute('aria-invalid');if(e)e.remove();return;}
- x.setAttribute('aria-invalid','true');if(!e&&f){e=document.createElement('div');e.className='ferr';f.appendChild(e);}if(e)e.textContent=L(msg);}
+ x.setAttribute('aria-invalid','true');if(!e)avVoice(['checkfield']);if(!e&&f){e=document.createElement('div');e.className='ferr';f.appendChild(e);}if(e)e.textContent=L(msg);}
 document.addEventListener('input',ev=>{const x=ev.target,d=$('#view').dataset.day;if(WZ&&x.closest('#modal'))return;
  if(x.id==='chatq'){AI.draft=x.value;return;}
  if(x.dataset.f&&x.type!=='checkbox'){const v=x.dataset.f==='note'?x.value:x.value.trim();
