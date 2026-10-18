@@ -7219,6 +7219,7 @@ function coachMount(){if($('#coach'))return;const d=document.createElement('div'
  d.addEventListener('click',ev=>{const b=ev.target.closest('[data-co]');
   if(b){const a=b.dataset.co;if(a==='close'){clearInterval(COACH.typing);COACH.typing=null;COACH.talk=false;COACH.q=[];COACH.cur=null;$('#cbub').hidden=true;avStop();}else if(a==='min'){avStop();coachMin(true);}
   else if(a==='intro')avIntro();
+  else if(a==='quiz'){location.hash='#/friend';setTimeout(()=>chatSend(L('Давай сыграем в «Правда или миф»')),450);}
   else if(a==='snd'){S.settings.alinaSound=!avSoundOn();save();b.textContent=avSoundOn()?'🔊':'🔇';if(!avSoundOn()&&avSpeaking())avStop();}else if(a==='open'){coachMin(false);if(!COACH.cur&&!COACH.q.length)coachTip();else if(!COACH.cur)coachNext();}else if(a==='next')coachNext();return;}
   if(ev.target.closest('#cfig')){if(COACH.typing)coachFinish();else if(COACH.q.length)coachNext();else coachTip();}});
  const loop=now=>{requestAnimationFrame(loop);if(COACH.min||document.hidden||now-COACH.last<45)return;COACH.last=now;coachDraw(now);};requestAnimationFrame(loop);coachDraw(performance.now());
@@ -7269,6 +7270,8 @@ function coachButtons(){const m=COACH.cur;if(!m||COACH.typing)return;const ac=$(
  ac.innerHTML=m.acts.map(a=>a[1][0]==='@'?`<button class="btn" data-co="${a[1].slice(1)}">${esc(a[0])}</button>`:a[1][0]==='#'?`<a class="btn" href="${a[1]}">${esc(a[0])}</a>`:`<button class="btn" data-act="${a[1]}">${esc(a[0])}</button>`).join('')+(COACH.q.length?`<button class="btn pri" data-co="next">${L('Дальше ›')}</button>`:'');}
 function coachTip(){const t=todayIso(),tip=bioTipFor(t,cycleInfo(t)),q=QUOTES[Math.floor(Math.random()*QUOTES.length)];
  const pool=[[L('Фишка дня: {0}. {1}',L(tip.t),L(tip.how)),'point'],[`«${L(q[1])}» — ${L(q[0])}. ${L(q[2])}`,'idle'],[L(TIPS[Math.floor(Math.random()*TIPS.length)]),'point'],[L('Хочешь поговорить? Я могу разобрать твою неделю, подсказать меню или просто поддержать 💛'),'wave']];
+ /* she invites to her «Правда или миф?» game now and then */
+ pool.push([cbPickInvite(),'wave','','@quiz']);
  /* a myth of the day from the biohacking section (the popular ones from social-media videos come first) */
  {const m=BIO_MYTHS[Math.random()<.5?BIO_MYTHS.length-1-Math.floor(Math.random()*BIO_MYTHS2.length):Math.floor(Math.random()*BIO_MYTHS.length)];pool.push([L('Разоблачаю миф: «{0}». {1}',L(m[0]),L(m[1])),'point','','#/bio']);}
  /* her own recorded phrases: on the website they play with her real voice */
@@ -7276,7 +7279,7 @@ function coachTip(){const t=todayIso(),tip=bioTipFor(t,cycleInfo(t)),q=QUOTES[Ma
  ['water','stretch','feel','withyou'].forEach(k=>pool.push([L(AV_LINES2[k][2]),'idle',k]));
  ['protein','veg','snack','glass','sleepfirst','three','thoughts','wavefeel','heart','worth','compare','restprog','knees','nohold','dizzy'].forEach(k=>pool.push([L(avLine(k)[2]),'idle',k]));
  if(AV.on&&LANG==='ru')pool.push([L('Хочешь, расскажу о себе? Это займёт минуту.'),'wave','','@intro']);
- const x=pool[Math.floor(Math.random()*pool.length)];coachSay(x[0],{mood:x[1],line:x[2]||undefined,acts:x[3]?[[x[3]==='@intro'?L('▶️ Послушать Алину'):L('🧪 Все мифы'),x[3]]]:x[1]==='wave'?[[L('💬 Поговорить'),'#/friend']]:[]});}
+ const x=pool[Math.floor(Math.random()*pool.length)];coachSay(x[0],{mood:x[1],line:x[2]||undefined,acts:x[3]?[[x[3]==='@intro'?L('▶️ Послушать Алину'):x[3]==='@quiz'?L('🎯 Играть'):L('🧪 Все мифы'),x[3]]]:x[1]==='wave'?[[L('💬 Поговорить'),'#/friend']]:[]});}
 function coachGreet(){if(COACH.greeted||!ST_())return;COACH.greeted=true;const s=ST_(),t=todayIso(),pd=progDay(t),hr=new Date().getHours(),nm=NM(),N=NW();
  const hi=hr<5?L('Доброй ночи'):hr<12?L('Доброе утро'):hr<18?L('Добрый день'):L('Добрый вечер');
  S.meta=S.meta||{};
@@ -7922,6 +7925,12 @@ function kbClose(o){Object.assign(CB.close,o);}
 function kbMotiv(rows){CB.motiv.push(...rows);}
 /* «Правда или миф?»: [ru question, true|false, ru explanation, en question, en explanation] */
 function kbQuiz(rows){CB.quiz.push(...rows);}
+/* her invitations to play (in the chat and in her own tips; they work before the base is loaded too) */
+const CB_INVITE=[['Сыграем в «Правда или миф»? У меня больше 100 вопросов о здоровье, еде и психологии — напиши «игра» 😊','Let’s play “Fact or myth”? I have over 100 questions about health, food and the mind — type “quiz” 😊'],
+ ['Хочешь проверить себя? Давай поиграем в «Правда или миф» — напиши «игра» 🎯','Want to test yourself? Let’s play “Fact or myth” — type “quiz” 🎯'],
+ ['Спорим, я тебя удивлю? Сыграем в «Правда или миф»: я говорю, ты угадываешь 😉 Напиши «игра».','Bet I can surprise you? “Fact or myth”: I say it, you guess 😉 Type “quiz”.'],
+ ['Мини-перерыв: пара вопросов «Правда или миф» о здоровье? Напиши «игра» 🎲','Mini break: a couple of “Fact or myth” health questions? Type “quiz” 🎲']];
+const cbPickInvite=()=>{const r=cbPick('inv',CB_INVITE);return LANG==='ru'?r[0]:r[1];};
 /* interesting facts [ru, en] */
 function kbFacts(rows){CB.facts.push(...rows);}
 /* website: fetch the base the first time it is needed */
@@ -7975,10 +7984,12 @@ function cbReply(text,pref){if(!CB.loaded)return null;const t=cbNorm(text).trim(
  let body;
  if(it){CB.last=it.id;body=cbPick(it.id+lg,it[lg]);}
  else if(mood&&CB.close['m:'+mood])body=cbPick('m:'+mood+lg,CB.close['m:'+mood][lg]);
- else body=cbPick('none'+lg,CB.close.none[lg])+(Math.random()<.4?(en?'\n\nOr let’s play “Fact or myth” — type “quiz” 😊':'\n\nИли давай сыграем в «Правда или миф» — напиши «игра» 😊'):'');
+ else body=cbPick('none'+lg,CB.close.none[lg]);
  const tag=it?it.tag:mood?'psy':'',cl=CB.close[tag];
  const r=Math.random();let end='';
  if(cl&&cl[lg]&&r<.55)end=cbPick('c:'+tag+lg,cl[lg]);else if(r<.8)end='✨ '+cbMotivLine();
+ /* now and then she offers her game: often when she didn't understand, rarely otherwise (never in a sad talk) */
+ if(!it&&!mood?Math.random()<.4:tag!=='psy'&&!mood&&Math.random()<.08)end='🎯 '+cbPickInvite();
  CB.scale=/от 1 до 10|from 1 to 10/.test(end);
  return cbFill([op,body,end].filter(Boolean).join('\n\n'));}
 
@@ -7993,7 +8004,7 @@ const AI={sample:null,state:'loading',tools:false,busy:false,ctl:null,draft:''};
   if(fn&&fn.limits)fn.limits().then(l=>{AI.tools=!!(l&&l.tools);}).catch(()=>{});
   if(curPage()==='friend')renderChatStatus();},()=>{AI.state='none';if(curPage()==='friend')renderChatStatus();});}catch(e){AI.state='none';}})();
 const curPage=()=>(location.hash.replace(/^#\/?/,'')||'today').split(/[/?]/)[0];
-const QUICK=[['🍽','Что мне сегодня съесть?'],['😩','Нет сил тренироваться'],['📊','Разбери мою неделю'],['🦵','Болят колени — что делать?'],['🍫','Хочу сладкого'],['💛','Мне грустно, поддержи']];
+const QUICK=[['🍽','Что мне сегодня съесть?'],['😩','Нет сил тренироваться'],['📊','Разбери мою неделю'],['🦵','Болят колени — что делать?'],['🍫','Хочу сладкого'],['💛','Мне грустно, поддержи'],['🎯','Давай сыграем в «Правда или миф»']];
 
 function aiContext(){const s=ST_(),t=todayIso(),pd=progDay(t),N=NW(),nr=normFor(t),rw=refWeight(t),h=H(),ci=cycleInfo(t),pl=pd.d>=0&&pd.week<=N?planDay(t):null,dd=getDay(t);
  const gt=L((GTYPES.find(g=>g[0]===s.gtype)||GTYPES[0])[1]).replace(/^\S+\s/,'');
