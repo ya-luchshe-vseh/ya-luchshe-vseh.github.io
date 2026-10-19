@@ -475,7 +475,7 @@ body.onfriend #coach{display:none!important}
 .alinafig .abody{position:absolute;inset:0;transform-origin:46% 100%;animation:fBreath 4.2s ease-in-out infinite,fSway 8s ease-in-out infinite;filter:drop-shadow(0 10px 22px rgba(60,20,50,.28))}
 .alinafig .apose{position:absolute;opacity:0;transition:opacity .28s ease}
 .alinafig .apose img,.alinafig .apose svg{position:absolute;inset:0;width:100%;height:100%;display:block;user-select:none;-webkit-user-drag:none}
-.alinafig .p-idle,#coach[data-mood=wave] .p-wave,#coach[data-mood=cheer] .p-cheer{opacity:1}
+.alinafig .p-idle,#coach[data-mood=wave] .p-wave,#coach[data-mood=cheer] .p-cheer,#coach[data-mood=party] .p-cheer{opacity:1}
 #coach[data-mood=wave] .p-idle,#coach[data-mood=cheer] .p-idle{opacity:0}
 #coach[data-mood=cheer] .astage{transform:translateX(-38%)}
 .alinafig .apose img.af{inset:auto;opacity:0;transition:opacity .05s linear;pointer-events:none}
@@ -547,6 +547,9 @@ body.onfriend #coach{display:none!important}
 .alinafig.vmode .apose img.af{transition:opacity .06s linear}.alinafig.vmode .apose img.f-eH,.alinafig.vmode .apose img.f-eC{transition:none}
 .alinafig.vplay .apose img.af,.alinafig.vidle .apose img.af{opacity:0!important}
 
+/* the living idle video already breathes and moves: no drawn sway on top of it (it made her look shaky) */
+#coach .alinafig.vmode.vidle .abody,#coach.talk .alinafig.vmode.vidle .abody{animation:none!important}
+
 </style>
 </head>
 <body>
@@ -611,7 +614,7 @@ body.onfriend #coach{display:none!important}
 const ALINA_IMG="alina-face.jpg";
 const ALINA_POSES={idle:"alina-front.webp",wave:"alina-wave.webp",cheer:"alina-cheer.webp"};
 const ALINA_FACE_IMG={eC:"alina-eyes-closed.webp",eH:"alina-eyes-half.webp",mA:"alina-mouth-a.webp",mO:"alina-mouth-o.webp",mC:"alina-mouth-closed.webp"};
-window.ALINA_VID={"still":"alina-still.webp","av":"av/","avm":"avm/","face":{"eH":[246,138,152,66],"eC":[246,138,152,66],"m1":[260,210,106,70],"m2":[260,210,106,70],"m3":[260,210,106,70],"m4":[260,210,106,70],"mO":[260,210,106,70],"mC":[260,210,106,70]}};
+window.ALINA_VID={"still":"alina-still.webp","idle":"k:idle","av":"av/","avm":"avm/","face":{"eH":[246,138,152,66],"eC":[246,138,152,66],"m1":[260,210,106,70],"m2":[260,210,106,70],"m3":[260,210,106,70],"m4":[260,210,106,70],"mO":[260,210,106,70],"mC":[260,210,106,70]}};
 /* ---- core.js ---- */
 "use strict";
 /* true inside the claude.ai viewer; false on the standalone site */
@@ -7077,9 +7080,11 @@ const AV_MORE={
   cutie:[58.23,59.37,'Красотулька!']}};
 const avLine=k=>{if(AV_LINES[k])return[...AV_LINES[k],'talk',k];if(AV_LINES2[k])return[...AV_LINES2[k],'talk2',k];
  for(const f in AV_MORE)if(AV_MORE[f][k])return[...AV_MORE[f][k],f,k];return null;};
-/* gestures in alina-move.mp4 (first Kling clip 0–10.43 s, second 10.43–31.33, the wave forth and back 31.33–37.13):
-   both start and end in the calm pose — the still picture is the first frame of the first clip */
-const AV_MOVES={wave:[31.33,37.1],cheer:[0,10.38]};
+/* gestures for situations (tools/avsplit.py cuts them from the Kling clips; each starts and ends in the calm pose):
+   wave = hello/bye, cheer/cheer2 = praise (thumbs up to the chest), party = big moments (wave + thumbs up + thumbs at chest).
+   [from, to] in the gesture's own file; the clip also ends by itself when the file is shorter */
+const AV_MOVES={wave:[0,5.8],cheer:[0,6.8],cheer2:[0,8],party:[0,10.4]};
+const avMoveKey=mood=>mood==='cheer'?(Math.random()<.5?'cheer':'cheer2'):AV_MOVES[mood]?mood:null;
 const AV={on:!!window.ALINA_VID,gl:null,cv:null,vids:{},kind:null,end:0,sound:false,lips:false,onend:null,unlocked:false,shown:false,raf:0};
 /* the website has every phrase and gesture as its own small file (tools/avsplit.py): av/ for big screens, avm/ for phones
    (a third of the weight; Alina is ~150 px tall there). Kinds 'k:<key>' are these files; 'talk', 'move'… are the long ones. */
@@ -7121,9 +7126,9 @@ function avDraw(gl,cv,v){gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGN
 /* she is never a picture: alina-idle.mp4 (standing, breathing, blinking; built forth-and-back so it loops without a seam)
    plays all the time on its own canvas under the clips; the still picture shows only until its first frame is drawn */
 const IDLE={cv:null,gl:null,raf:0};
-function avIdle(){if(!AV.on||!ALINA_VID.idle)return;const cv=document.querySelector('#coach canvas.avidle');if(!cv)return;
+function avIdle(){if(!AV.on||!ALINA_VID.idle||matchMedia('(prefers-reduced-motion: reduce)').matches)return;const cv=document.querySelector('#coach canvas.avidle');if(!cv)return;
  if(cv!==IDLE.cv){IDLE.cv=cv;IDLE.gl=avGL(cv);}if(!IDLE.gl)return;
- const v=avVid('idle');v.loop=true;if(v.paused){const p=v.play();if(p&&p.catch)p.catch(()=>{});}
+ const v=avVid(/^k:/.test(ALINA_VID.idle)?ALINA_VID.idle:'idle');v.keep=1;v.loop=true;if(v.paused){const p=v.play();if(p&&p.catch)p.catch(()=>{});}
  if(!IDLE.raf){const tick=()=>{IDLE.raf=0;if(v.paused||COACH.min)return;
    if(v.readyState>=2&&IDLE.cv&&IDLE.cv.isConnected){avDraw(IDLE.gl,IDLE.cv,v);const f=IDLE.cv.closest('.alinafig');if(f&&!f.classList.contains('vidle'))f.classList.add('vidle');}
    IDLE.raf=requestAnimationFrame(tick);};IDLE.raf=requestAnimationFrame(tick);}}
@@ -7148,7 +7153,7 @@ function avLips(){const more={lips:true,onend:()=>{if(COACH.talk||(window.speech
 /* the files she needs first are fetched while the page settles: lips, the wave and her first words */
 function avWarm(){if(!AV_SPLIT||AV.warm||!AV.on)return;AV.warm=1;
  const hr=new Date().getHours();
- setTimeout(()=>[ALINA_VID.face?'':'lips','wave',hr<5?'night':hr<12?'morning':hr<18?'day':'evening'].filter(Boolean).forEach(k=>{avVid('k:'+k).keep=1;}),1200);}
+ setTimeout(()=>[ALINA_VID.face&&!ALINA_VID.idle?'':'lips','wave',hr<5?'night':hr<12?'morning':hr<18?'day':'evening'].filter(Boolean).forEach(k=>{avVid('k:'+k).keep=1;}),1200);}
 /* her voice for several recorded pieces one after another (workout player); works even when the corner Alina is hidden */
 function avVoice(keys){if(!AV.on||LANG!=='ru'||!AV.unlocked)return false;const ls=keys.map(avLine);if(ls.some(l=>!l))return false;
  const go=i=>{const l=ls[i];if(!l)return;avPlay(l[3],l[0],l[1],{key:l[4],sound:true,audio:true,onend:()=>go(i+1)});};go(0);return true;}
@@ -7172,9 +7177,11 @@ function avMessage(m){if(!AV.on)return 0;
  if(ls.length&&ls.every(Boolean)&&LANG==='ru'&&AV.unlocked&&(m.force||avSoundOn())){
   const go=i=>{const l=ls[i];return avPlay(l[3],l[0],l[1],{key:l[4],sound:true,onend:()=>{if(COACH.cur!==m)return;if(i+1<ls.length)go(i+1);else if(m.auto)coachNext();}});};
   if(go(0))return Math.max(20,Math.min(90,ls.reduce((a,l)=>a+l[1]-l[0],0)*1000/m.text.length));}
- const mv=AV_MOVES[m.mood];
- if(mv)avPlay('move',mv[0],mv[1],{key:m.mood,onend:()=>{if(COACH.cur===m&&COACH.talk&&!ALINA_VID.face)avLips();}});
- else if(!ALINA_VID.face)avLips();   // with her face pieces the lips move on the still, letter by letter (extras.js)
+ const mk=avMoveKey(m.mood),mv=mk&&AV_MOVES[mk];
+ /* lips: while she stands in her living idle loop, a muted talking clip; without it, her lip pieces on the still (extras.js) */
+ const clipLips=!ALINA_VID.face||!!ALINA_VID.idle;
+ if(mv)avPlay('move',mv[0],mv[1],{key:mk,onend:()=>{if(COACH.cur===m&&COACH.talk&&clipLips)avLips();}});
+ else if(clipLips)avLips();   // with her face pieces the lips move on the still, letter by letter (extras.js)
  return 0;}
 /* her whole speech, line by line, with subtitles in the bubble */
 function avIntro(){const ks=Object.keys(AV_LINES),n=ks.length-1;
@@ -7227,7 +7234,7 @@ function coachMount(){if($('#coach'))return;const d=document.createElement('div'
  if(AV.on&&!(navigator.connection&&(navigator.connection.saveData||/2g/.test(navigator.connection.effectiveType||''))))avWarm();}
 function coachMin(on){COACH.min=on;const c=$('#coach');if(c)c.classList.toggle('min',on);try{localStorage.setItem('coach-min',on?'1':'0');}catch(e){}}
 function coachDraw(now){const el=$('#cfig');if(!el)return;if(COACH.mood!=='idle'&&now>COACH.moodUntil)COACH.mood='idle';const c=$('#coach'),round=who()==='kid';if(!el.firstChild||el.dataset.kind!==(round?'r':'f')){el.dataset.kind=round?'r':'f';el.innerHTML=round?alinaPortrait('a-float'):alinaFigure();el.querySelectorAll('img.af').forEach(i=>i.decode&&i.decode().catch(()=>{}));}if(c){c.classList.toggle('round',round);c.classList.toggle('talk',!!COACH.talk);c.dataset.mood=COACH.mood;}
- const f=!round&&el.querySelector('.alinafig');if(f&&AV.on){avIdle();avIdleGesture(now);}
+ const f=!round&&el.querySelector('.alinafig');if(f&&AV.on)avIdle();
  if(f){alinaBlink(f,now);const m=f.classList.contains('vmode')?alinaVMouth(now):alinaMouth(now);if(f.dataset.mouth!==m)f.dataset.mouth=m;}}
 /* face of the floating Alina. Blinks are played by the browser (Web Animations, its own exact timing and smooth crossfades
    open → half → closed → half → open), so they don't stutter on the 45 ms coach tick; sometimes twice in a row.
@@ -7246,11 +7253,6 @@ function alinaVMouth(now){
  if(!COACH.talk||AV.kind)FACE.mouth='';
  else if(now>=FACE.until){const t=COACH.cur?COACH.cur.text:'';FACE.mouth=vfaceVis(t[COACH.pos||0]||' ');FACE.until=now+90+Math.random()*50;}
  return FACE.mouth;}
-/* she is alive while nobody talks to her: now and then she waves or shows a thumbs up on her own */
-function avIdleGesture(now){if(!FACE.gest){FACE.gest=now+25000+Math.random()*20000;return;}
- if(now<FACE.gest)return;FACE.gest=now+50000+Math.random()*50000;
- if(COACH.talk||COACH.min||AV.kind||document.hidden)return;
- const k=Math.random()<.6?'wave':'cheer',mv=AV_MOVES[k];avPlay('move',mv[0],mv[1],{key:k});}
 function alinaMouth(now){
  if(!COACH.talk||COACH.mood!=='idle')FACE.mouth='C';
  else if(now>=FACE.until){const t=COACH.cur?COACH.cur.text:'';let v=faceVis(t[COACH.pos||0]||' ');if(v===FACE.mouth&&v!=='C')v=v===''?'A':'';FACE.mouth=v;FACE.until=now+85+Math.random()*60;}
@@ -7298,7 +7300,7 @@ function coachGreet(){if(COACH.greeted||!ST_())return;COACH.greeted=true;const s
  {const k=avLineOfDay();coachSay(L(AV_LINES[k][2]),{line:k});}
  if(who()==='kid')coachSay(L('Привет, малышка! Ты настоящая чемпионка!'),{mood:'wave',line:['baby','champ']});
  else if(who()==='senior')coachSay(L('Береги суставы, двигайся плавно.'),{line:'joints'});
- if(pd.d===30)coachSay(L('Месяц с нами, ты невероятная!'),{mood:'cheer',line:'month1'});
+ if(pd.d===30)coachSay(L('Месяц с нами, ты невероятная!'),{mood:'party',line:'month1'});
  if(hr>=18&&!getDay(t).mood)coachSay(L('Отметь настроение.'),{line:'mood',acts:[[L('Открыть дневник'),'#/journal']]});
  if(hr>=22||hr<2)coachSay(L('Пора готовиться ко сну. Отложи телефон за час до сна.'),{line:['bedtime','phone']});
  analyzeRecent(7).filter(f=>f.sev==='urgent'||f.sev==='doctor').slice(0,2).forEach(f=>coachSay(`${L('Меня беспокоит:')} ${L(f.title).toLowerCase()}. ${f.who?L('К кому обратиться:')+' '+L(f.who)+'. ':''}${f.tests?L('Что сдать:')+' '+L(f.tests)+'.':''}`,{mood:'think',acts:[[L('Открыть дневник'),'#/journal']]}));
@@ -7306,7 +7308,7 @@ function coachGreet(){if(COACH.greeted||!ST_())return;COACH.greeted=true;const s
  if(pd.d<0)coachSay(L('До старта {0} {1}. Пройди по списку подготовки на экране — и мы готовы!',-pd.d,plural(-pd.d,'день','дня','дней')),{mood:'point'});
  else if(pd.week<=N){const pl=planDay(t),nr=normFor(t),dd=getDay(t);
   if(pl.base.rest)coachSay(L('Сегодня день отдыха: прогулка и норма шагов — и всё отлично.'),{mood:'idle',line:'restday'});
-  else if(dd.done)coachSay(L('Тренировка уже сделана — ты умница! 🎉'),{mood:'cheer',line:'wdone'});
+  else if(dd.done)coachSay(L('Тренировка уже сделана — ты умница! 🎉'),{mood:'party',line:'wdone'});
   else coachSay(L('Сегодня «{0}», около {1} минут. Нажми «▶ Начать тренировку» — я буду считать вслух.',L(pl.base.t),estMin(pl.blocks)),{mood:'point',line:[AV_STYLE[pl.base.style]||'todaywk','pressgo']});
   if(pl.autoLight)coachSay(L('Я облегчила сегодняшнюю тренировку по твоему циклу и самочувствию. Береги себя 💛'),{mood:'idle',line:'light'});
   coachSay(s.noCount?L('Сегодня: вода {0} л, шаги {1}, белок в каждый приём.',fmtN(nr.water),fmtI(nr.steps)):L('Твоя норма сегодня: {0} ккал, белок {1} г, вода {2} л, шаги {3}.',nr.kcal,nr.p,fmtN(nr.water),fmtI(nr.steps)),{mood:'idle',line:s.noCount?'protein':'normscreen'});}
@@ -7327,14 +7329,14 @@ function coachReact(type,v,d){if(!ST_())return;const t=d||todayIso(),R=(txt,mood
  else if(type==='noteNow'||type==='journal'){const f=analyzeText(v).sort((a,b)=>SEVO[a.sev]-SEVO[b.sev]);
   if(f.length){const x=f[0];R(`${SEVI[x.sev]} ${L(x.title)}. ${L(x.text)}${x.who?' '+L('К кому обратиться:')+' '+L(x.who)+'.':''}${x.tests?' '+L('Что сдать:')+' '+L(x.tests)+'.':''}`,x.sev==='good'?'cheer':'think');}
   else if(type==='journal')R(L('Записала. Спасибо, что делишься — так я лучше понимаю, как тебе помочь 💛'),'idle');}
- else if(type==='done')R(L('Тренировка выполнена! {0}, ты большая молодец 🎉',NM()),'cheer');
- else if(type==='ex'){if(Math.random()<.35)R(L(['Есть! ✔','Так держать!','Красиво работаешь!','Ещё одно — и ты ближе к цели!'][Math.floor(Math.random()*4)]),'cheer');}
+ else if(type==='done')R(L('Тренировка выполнена! {0}, ты большая молодец 🎉',NM()),'party');
+ else if(type==='ex'){if(Math.random()<.35)R(L(['Есть! ✔','Так держать!','Красиво работаешь!','Ещё одно — и ты ближе к цели!'][Math.floor(Math.random()*4)]),'idle');}   // a short word, no 7-second gesture
  else if(type==='mood'){if(['sad','anx','apathy','irrit'].includes(v))R(L('Спасибо, что отметила. Такие дни бывают. Прогулка при дневном свете, дыхание 4-7-8 и тёплый чай помогают. Я рядом 💛'),'think');else if(['happy','energ'].includes(v))R(L('Ура, хорошее настроение — самое время для классной тренировки! ✨'),'cheer');}
  else if(type==='flow'){if(['med','heavy'].includes(v))R(L('Береги себя в эти дни. Отметь спазмы или низкую энергию — и я облегчу тренировку.'),'idle');}
  else if(type==='sym'){if(v==='cramps')R(L('Отметила спазмы. Во время месячных тренировка облегчится автоматически. Тепло и лёгкое движение помогают.'),'think');}
  else if(type==='energy'){if(v<=2)R(L('Мало сил — это нормально. Сегодня мягкий режим, без геройства 💛'),'think');else if(v>=4)R(L('Энергии много — отличный день, чтобы взять резинку потуже! 💪'),'cheer');}
  else if(type==='bio'){const b=getDay(t).bio||{};if(BIO_CORE.every(c=>b[c[0]]))R(L('Все 5 привычек дня выполнены — это настоящий биохакинг! 🧬'),'cheer');}
- else if(type==='task'){R(L('Задача выполнена! ✔'),'cheer');}}
+ else if(type==='task'){R(L('Задача выполнена! ✔'),'idle');}}
 
 /* ============ EARLY TIME-RESTRICTED EATING 10–16 (offered on a plateau) ============ */
 function avgW(endIso,from,to){const v=[];for(let i=from;i<=to;i++){const x=num(getDay(iso(addD(P(endIso),i))).w);if(x)v.push(x);}return v.length?v.reduce((a,b)=>a+b,0)/v.length:null;}
@@ -8432,7 +8434,7 @@ async function monthOut(ym,share){const b=await monthPicture(ym);if(!b){toast(L(
  toast(share?L('Поделиться отсюда нельзя — картинка сохранена, отправь её из галереи'):L('Картинка сохранена'));}
 function monthGreet(){const d=new Date(),prev=ymOf(new Date(d.getFullYear(),d.getMonth()-1,1));S.meta=S.meta||{};
  if(d.getDate()>3||S.meta.monthSeen===prev||prev<ST_().start.slice(0,7)||!monthStats(prev).done)return;S.meta.monthSeen=prev;save();
- coachSay(L('Новый месяц! Я подвела итоги прошлого — загляни, там есть чем гордиться 🏆'),{mood:'cheer',line:'month',acts:[[L('🏆 Итоги месяца'),'#/month/'+prev]]});}
+ coachSay(L('Новый месяц! Я подвела итоги прошлого — загляни, там есть чем гордиться 🏆'),{mood:'party',line:'month',acts:[[L('🏆 Итоги месяца'),'#/month/'+prev]]});}
 
 /* ---------- buttons (here, not in router.js: they also come from Alina's bubble) ---------- */
 document.addEventListener('click',ev=>{const b=ev.target.closest('[data-act]');if(!b)return;const a=b.dataset.act,d=($('#view')&&$('#view').dataset.day)||todayIso();
