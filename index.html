@@ -6935,151 +6935,151 @@ function alinaFigure(){const pc=(v,b)=>(v/b*100).toFixed(3)+'%';
    The speech is cut into lines (times in seconds, cut at the pauses): a coach message with `line` plays that exact
    piece with her own voice; any other message plays a muted piece, so her lips move while the text is typed. */
 const AV_LINES={
- hello:[.3,3.83,'Привет! Я Алина, твоя помощница и подруга.'],
- here:[3.83,6.49,'Я рядом, чтобы выслушать и поддержать тебя.'],
- perfect:[6.49,11.32,'Не нужно быть идеальной каждый день. Маленькие шаги тоже ведут вперёд.'],
- proud:[11.32,14.71,'Ты большая молодец, и у тебя многое получается.'],
- calm:[14.71,18.68,'Давай двигаться к целям спокойно, без гонки и сравнений.'],
- start:[18.68,25.76,'Начнём с простого. Немного воды, глубокий вдох, лёгкая разминка и один посильный шаг сегодня.'],
- help:[25.76,31.61,'Я помогу подобрать упражнения и привычки под твой ритм. Напомню об отдыхе и восстановлении.'],
- psy:[31.61,37.49,'Если тебе тревожно или грустно, расскажи, что случилось, — мы подумаем, что может помочь.'],
- doctor:[37.49,47.47,'А если самочувствие беспокоит, есть боль или необычные симптомы, пожалуйста, обратись к врачу. Я могу поддержать, но не заменяю медицинского специалиста.'],
- keep:[47.47,51.33,'Держись, не сдавайся. Ошибки не отменяют твой прогресс.'],
- care:[51.33,54.74,'Ты заслуживаешь заботы, уважения, отдыха.'],
- believe:[54.74,56.57,'Я верю, что ты справишься.'],
- go:[56.57,58.3,'Ну что, начнём вместе?']};
+ hello:[.17,3.69,'Привет! Я Алина, твоя помощница и подруга.'],
+ here:[3.86,6.47,'Я рядом, чтобы выслушать и поддержать тебя.'],
+ perfect:[6.82,11.14,'Не нужно быть идеальной каждый день. Маленькие шаги тоже ведут вперёд.'],
+ proud:[11.43,14.41,'Ты большая молодец, и у тебя многое получается.'],
+ calm:[14.74,18.29,'Давай двигаться к целям спокойно, без гонки и сравнений.'],
+ start:[18.65,25.41,'Начнём с простого. Немного воды, глубокий вдох, лёгкая разминка и один посильный шаг сегодня.'],
+ help:[25.74,31.52,'Я помогу подобрать упражнения и привычки под твой ритм. Напомню об отдыхе и восстановлении.'],
+ psy:[31.85,37.23,'Если тебе тревожно или грустно, расскажи, что случилось, — мы подумаем, что может помочь.'],
+ doctor:[37.57,47.35,'А если самочувствие беспокоит, есть боль или необычные симптомы, пожалуйста, обратись к врачу. Я могу поддержать, но не заменяю медицинского специалиста.'],
+ keep:[47.58,51.23,'Держись, не сдавайся. Ошибки не отменяют твой прогресс.'],
+ care:[51.54,54.51,'Ты заслуживаешь заботы, уважения, отдыха.'],
+ believe:[54.69,56.18,'Я верю, что ты справишься.'],
+ go:[56.53,58.3,'Ну что, начнём вместе?']};
 /* the second recording (alina-talk2.mp4): workout words, counting, greetings by the time of day, reminders */
 const AV_LINES2={
- morning:[0,1.23,'Доброе утро!'],
- day:[1.23,2.14,'Добрый день!'],
- evening:[2.14,3.02,'Добрый вечер!'],
- night:[3.02,3.97,'Доброй ночи!'],
- back:[3.97,6.24,'С возвращением, я скучала!'],
- wstart:[6.24,8.04,'Начинаем тренировку.'],
- warm:[8.04,8.81,'Разминка.'],
- next:[8.81,10.54,'Следующее упражнение.'],
- rest:[10.54,11.31,'Отдых.'],
- side:[11.31,12.81,'Меняем сторону.'],
- lastset:[12.81,13.96,'Последний подход!'],
- push:[13.96,16.02,'Ещё чуть-чуть, ты сможешь!'],
- n1:[16.02,16.75,'Раз.'],
- n2:[16.75,17.36,'Два.'],
- n3:[17.36,17.81,'Три.'],
- n4:[17.81,18.54,'Четыре.'],
- n5:[18.54,19.23,'Пять.'],
- n6:[19.23,19.94,'Шесть.'],
- n7:[19.94,20.68,'Семь.'],
- n8:[20.68,21.37,'Восемь.'],
- n9:[21.37,22.09,'Девять.'],
- n10:[22.09,22.76,'Десять.'],
- sec5:[22.76,23.94,'Пять секунд!'],
- inhale:[23.94,24.69,'Вдох.'],
- exhale:[24.69,25.45,'Выдох.'],
- hold:[25.45,26.06,'Держим.'],
- straight:[26.06,27.24,'Спина прямая.'],
- slow:[27.24,28.12,'Не спеши.'],
- pause:[28.12,28.67,'Пауза.'],
- cont:[28.67,29.58,'Продолжаем.'],
- great:[29.58,30.5,'Отлично!'],
- ready:[30.5,31.29,'Готово!'],
- wdone:[31.29,33.78,'Тренировка сделана, ты умница!'],
- record:[33.78,35.62,'Ура, новый рекорд!'],
- restday:[35.62,38.74,'Сегодня день отдыха: прогулка и шаги.'],
- light:[38.74,41.28,'Сегодня лёгкий день, береги себя.'],
- missed:[41.28,44.7,'Пропустила тренировку? Ничего страшного, продолжаем.'],
- week:[44.7,47.04,'Новая неделя, новые силы!'],
- water:[47.04,48.71,'Не забудь выпить воды.'],
- stretch:[48.71,50.25,'Пора немного размяться.'],
- weigh:[50.25,51.8,'Запиши сегодня свой вес.'],
- feel:[51.8,53.48,'Как ты себя чувствуешь?'],
- backup:[53.48,55.64,'Давай сохраним копию твоих данных.'],
+ morning:[0,1.2,'Доброе утро!'],
+ day:[1.2,2.05,'Добрый день!'],
+ evening:[2.1,3.04,'Добрый вечер!'],
+ night:[3.04,4,'Доброй ночи!'],
+ back:[4.28,6.21,'С возвращением, я скучала!'],
+ wstart:[6.59,7.87,'Начинаем тренировку.'],
+ warm:[8,8.85,'Разминка.'],
+ next:[9.08,10.41,'Следующее упражнение.'],
+ rest:[10.68,11.31,'Отдых.'],
+ side:[11.55,12.59,'Меняем сторону.'],
+ lastset:[12.76,13.69,'Последний подход!'],
+ push:[13.95,15.79,'Ещё чуть-чуть, ты сможешь!'],
+ n1:[16.04,16.61,'Раз.'],
+ n2:[16.71,17.25,'Два.'],
+ n3:[17.39,17.82,'Три.'],
+ n4:[17.87,18.55,'Четыре.'],
+ n5:[18.65,19.12,'Пять.'],
+ n6:[19.19,19.84,'Шесть.'],
+ n7:[20.07,20.51,'Семь.'],
+ n8:[20.64,21.35,'Восемь.'],
+ n9:[21.41,22.05,'Девять.'],
+ n10:[22.1,22.77,'Десять.'],
+ sec5:[22.95,23.75,'Пять секунд!'],
+ inhale:[23.91,24.48,'Вдох.'],
+ exhale:[24.66,25.19,'Выдох.'],
+ hold:[25.43,26.09,'Держим.'],
+ straight:[26.22,27.22,'Спина прямая.'],
+ slow:[27.23,27.93,'Не спеши.'],
+ pause:[28.07,28.69,'Пауза.'],
+ cont:[28.8,29.58,'Продолжаем.'],
+ great:[29.7,30.4,'Отлично!'],
+ ready:[30.49,31.13,'Готово!'],
+ wdone:[31.28,33.43,'Тренировка сделана, ты умница!'],
+ record:[33.77,35.32,'Ура, новый рекорд!'],
+ restday:[35.57,38.48,'Сегодня день отдыха: прогулка и шаги.'],
+ light:[38.69,40.99,'Сегодня лёгкий день, береги себя.'],
+ missed:[41.23,44.58,'Пропустила тренировку? Ничего страшного, продолжаем.'],
+ week:[44.74,46.79,'Новая неделя, новые силы!'],
+ water:[47,48.73,'Не забудь выпить воды.'],
+ stretch:[48.73,50,'Пора немного размяться.'],
+ weigh:[50.29,51.82,'Запиши сегодня свой вес.'],
+ feel:[52.01,53.29,'Как ты себя чувствуешь?'],
+ backup:[53.45,55.35,'Давай сохраним копию твоих данных.'],
  withyou:[55.64,57.55,'Я с тобой, всё получится.']};
 /* three more recordings (full figure): workout extras, food, cycle, questionnaire, psychology, safety, styles */
 const AV_MORE={
  talk3:{
-  set2:[0,1.35,'Подход два.'],
-  set3:[1.35,2.18,'Подход три.'],
-  set4:[2.18,3.29,'Подход четыре.'],
-  rest30:[3.29,5.14,'Отдых тридцать секунд.'],
-  rest45:[5.14,6.9,'Отдых сорок пять секунд.'],
-  rest60:[6.9,7.83,'Отдых минута.'],
-  rest90:[7.83,9.49,'Отдых полторы минуты.'],
-  getready:[9.49,10.55,'Приготовься.'],
-  half:[10.55,11.62,'Половина позади!'],
-  breathe:[11.62,12.78,'Дыши ровно.'],
-  nice:[12.78,14.07,'Красиво работаешь!'],
-  stronger:[14.07,16.07,'Ты сильнее, чем думаешь!'],
-  setdone:[16.07,17.1,'Подход выполнен.'],
-  lastex:[17.1,18.9,'Последнее упражнение!'],
-  todaywk:[18.9,20.5,'Сегодня у нас тренировка.'],
-  pressgo:[20.5,23.11,'Нажми «Начать», я буду считать вслух.'],
-  softday:[23.11,24.97,'Сегодня мягкий день по циклу.'],
-  strongday:[24.97,27.8,'Сегодня сильный день, можно чуть больше.'],
-  normscreen:[27.8,30.12,'Твоя норма на сегодня уже на экране.'],
-  posture:[30.12,31.55,'Пора выпрямить спину.'],
-  month:[31.55,33.82,'Посмотри, сколько ты сделала за месяц!'],
-  bedtime:[33.82,35.6,'Пора готовиться ко сну.'],
-  breath46:[35.6,39.72,'Давай подышим вместе: вдох на четыре, выдох на шесть.'],
-  listen:[39.72,41.05,'Я тебя слушаю.'],
-  thanks:[41.05,42.73,'Спасибо, что поделилась.'],
-  crisis:[42.73,47.58,'Если тебе сейчас очень плохо, позвони по номеру сто двенадцать. Ты не одна.'],
-  baby:[47.58,48.74,'Привет, малышка!'],
-  champ:[48.74,50.27,'Ты настоящая чемпионка!'],
-  joints:[50.27,52.9,'Береги суставы, двигайся плавно.'],
-  bye:[52.9,54.7,'До завтра, отдыхай!'],
-  yay:[54.7,56.11,'Ура, получилось!'],
-  wait:[56.11,58.18,'Не торопись, я подожду.'],
-  proudof:[58.18,59.41,'Горжусь тобой.'],
-  forward:[59.41,60.01,'Вперёд!'],
-  clever:[60.01,60.97,'Умница!']},
+  set2:[0,1.17,'Подход два.'],
+  set3:[1.33,2.15,'Подход три.'],
+  set4:[2.31,3.31,'Подход четыре.'],
+  rest30:[3.57,4.93,'Отдых тридцать секунд.'],
+  rest45:[5.14,6.62,'Отдых сорок пять секунд.'],
+  rest60:[6.86,7.85,'Отдых минута.'],
+  rest90:[8.02,9.39,'Отдых полторы минуты.'],
+  getready:[9.54,10.34,'Приготовься.'],
+  half:[10.49,11.53,'Половина позади!'],
+  breathe:[11.66,12.58,'Дыши ровно.'],
+  nice:[12.83,14.03,'Красиво работаешь!'],
+  stronger:[14.32,15.9,'Ты сильнее, чем думаешь!'],
+  setdone:[16.05,17.15,'Подход выполнен.'],
+  lastex:[17.49,18.76,'Последнее упражнение!'],
+  todaywk:[18.87,20.3,'Сегодня у нас тренировка.'],
+  pressgo:[20.46,22.93,'Нажми «Начать», я буду считать вслух.'],
+  softday:[23.08,24.78,'Сегодня мягкий день по циклу.'],
+  strongday:[24.95,27.38,'Сегодня сильный день, можно чуть больше.'],
+  normscreen:[27.76,29.97,'Твоя норма на сегодня уже на экране.'],
+  posture:[30.08,31.41,'Пора выпрямить спину.'],
+  month:[31.64,33.84,'Посмотри, сколько ты сделала за месяц!'],
+  bedtime:[34.03,35.35,'Пора готовиться ко сну.'],
+  breath46:[35.58,39.49,'Давай подышим вместе: вдох на четыре, выдох на шесть.'],
+  listen:[39.68,40.76,'Я тебя слушаю.'],
+  thanks:[41.1,42.43,'Спасибо, что поделилась.'],
+  crisis:[42.8,47.29,'Если тебе сейчас очень плохо, позвони по номеру сто двенадцать. Ты не одна.'],
+  baby:[47.61,48.61,'Привет, малышка!'],
+  champ:[48.74,50.28,'Ты настоящая чемпионка!'],
+  joints:[50.44,52.74,'Береги суставы, двигайся плавно.'],
+  bye:[52.89,54.53,'До завтра, отдыхай!'],
+  yay:[54.77,56.13,'Ура, получилось!'],
+  wait:[56.33,57.99,'Не торопись, я подожду.'],
+  proudof:[58.18,59.15,'Горжусь тобой.'],
+  forward:[59.36,59.95,'Вперёд!'],
+  clever:[60.19,60.97,'Умница!']},
  talk4:{
-  meet:[0,5.54,'Давай познакомимся! Ответь на несколько вопросов, и я составлю программу под тебя.'],
-  planready:[5.54,7.06,'Твоя программа готова!'],
-  checkfield:[7.06,8.63,'Проверь, пожалуйста, это поле.'],
-  breakfast:[8.63,10.27,'Пора завтракать!'],
-  protein:[10.27,12.8,'Не забудь про белок в каждом приёме пищи.'],
-  veg:[12.8,14.83,'Добавь овощи к обеду.'],
-  snack:[14.83,16.21,'Перекус лучше с белком.'],
-  dinner:[16.21,18.04,'Вечером ешь полегче.'],
-  day1:[18.04,21.59,'Сегодня первый день цикла, будь к себе бережной.'],
-  fol:[21.59,25.92,'Фолликулярная фаза: сил больше, можно добавить нагрузку.'],
-  ovu:[25.92,28.59,'Овуляция: ты на пике энергии!'],
-  lut:[28.59,32.89,'Лютеиновая фаза: нормально хотеть сладкого и больше отдыхать.'],
-  stepsdone:[32.89,34.71,'Норма шагов выполнена!'],
-  walkmore:[34.71,37.74,'Пройдись ещё немного, до цели совсем чуть-чуть.'],
-  slept:[37.74,40.98,'Ты спала мало, сегодня тренируемся мягче.'],
-  logfeel:[40.98,43.04,'Запиши, как ты себя чувствуешь.'],
-  mood:[43.04,44.43,'Отметь настроение.'],
-  preg:[44.43,48.55,'Беременность — только с разрешения врача и в щадящем режиме.'],
-  nostarve:[48.55,52.19,'Не голодай: так уходят мышцы и волосы, а не жир.'],
-  week7:[52.19,54.25,'Целая неделя без пропусков!'],
-  month1:[54.25,56.33,'Месяц с нами, ты невероятная!'],
-  glass:[56.33,58.36,'Выпей стакан воды.'],
-  hug:[58.36,59.26,'Обнимаю!'],
-  did:[59.26,60.72,'Ты справилась! Ура!']},
+  meet:[0,5.3,'Давай познакомимся! Ответь на несколько вопросов, и я составлю программу под тебя.'],
+  planready:[5.59,6.95,'Твоя программа готова!'],
+  checkfield:[7.11,8.67,'Проверь, пожалуйста, это поле.'],
+  breakfast:[8.89,10.02,'Пора завтракать!'],
+  protein:[10.22,12.83,'Не забудь про белок в каждом приёме пищи.'],
+  veg:[13.05,14.57,'Добавь овощи к обеду.'],
+  snack:[14.78,16.23,'Перекус лучше с белком.'],
+  dinner:[16.45,17.9,'Вечером ешь полегче.'],
+  day1:[18.17,21.3,'Сегодня первый день цикла, будь к себе бережной.'],
+  fol:[21.61,25.6,'Фолликулярная фаза: сил больше, можно добавить нагрузку.'],
+  ovu:[25.89,28.42,'Овуляция: ты на пике энергии!'],
+  lut:[28.58,32.65,'Лютеиновая фаза: нормально хотеть сладкого и больше отдыхать.'],
+  stepsdone:[32.88,34.43,'Норма шагов выполнена!'],
+  walkmore:[34.69,37.65,'Пройдись ещё немного, до цели совсем чуть-чуть.'],
+  slept:[37.86,40.62,'Ты спала мало, сегодня тренируемся мягче.'],
+  logfeel:[41.01,42.79,'Запиши, как ты себя чувствуешь.'],
+  mood:[43.12,44.39,'Отметь настроение.'],
+  preg:[44.73,48.27,'Беременность — только с разрешения врача и в щадящем режиме.'],
+  nostarve:[48.51,51.95,'Не голодай: так уходят мышцы и волосы, а не жир.'],
+  week7:[52.34,53.93,'Целая неделя без пропусков!'],
+  month1:[54.27,56.27,'Месяц с нами, ты невероятная!'],
+  glass:[56.27,58.18,'Выпей стакан воды.'],
+  hug:[58.34,59.14,'Обнимаю!'],
+  did:[59.21,60.72,'Ты справилась! Ура!']},
  talk5:{
-  yoga:[0,3.74,'Сегодня йога: дыши спокойно и не тянись через боль.'],
-  pilates:[3.74,6.5,'Пилатес любит медленный темп и точность.'],
-  stretch2:[6.5,8.82,'Растяжка только на тёплые мышцы.'],
-  box:[8.82,12.56,'Бокс: кулаки у лица, бей с поворотом корпуса.'],
-  dance:[12.56,15.78,'Танцуем! Двигайся, как тебе приятно.'],
-  run:[15.78,17.59,'Бег начинаем с быстрой ходьбы.'],
-  knees:[17.59,20.27,'Колени смотрят туда же, куда носки.'],
-  nohold:[20.27,21.81,'Не задерживай дыхание.'],
-  dizzy:[21.81,24.75,'Если закружилась голова, остановись и присядь.'],
-  chestpain:[24.75,28.39,'При боли в груди или одышке сразу вызывай скорую.'],
-  cramps:[28.39,32.78,'Болит живот в эти дни? Тёплая грелка и мягкая растяжка помогут.'],
-  sleepfirst:[32.78,34.43,'Сон важнее лишней тренировки.'],
-  phone:[34.43,37.05,'Отложи телефон за час до сна.'],
-  three:[37.05,39.58,'Назови три хорошие вещи за сегодня.'],
-  thoughts:[39.58,42.22,'Заметь свои мысли и не спорь с ними.'],
-  wavefeel:[42.22,44.05,'Это чувство пройдёт, как волна.'],
-  heart:[44.05,47.27,'Положи руку на сердце и сделай медленный выдох.'],
-  worth:[47.27,49.96,'Ты важна просто так, без условий.'],
-  compare:[49.96,52.8,'Сравнивай себя только с собой вчерашней.'],
-  restprog:[52.8,54.97,'Отдых — это тоже часть прогресса.'],
-  notweight:[54.97,58.23,'Вес не главное: смотри на силу и самочувствие.'],
-  cutie:[58.23,59.37,'Красотулька!']}};
+  yoga:[0,3.71,'Сегодня йога: дыши спокойно и не тянись через боль.'],
+  pilates:[4.1,6.53,'Пилатес любит медленный темп и точность.'],
+  stretch2:[6.78,8.63,'Растяжка только на тёплые мышцы.'],
+  box:[8.91,12.36,'Бокс: кулаки у лица, бей с поворотом корпуса.'],
+  dance:[12.51,15.62,'Танцуем! Двигайся, как тебе приятно.'],
+  run:[15.84,17.61,'Бег начинаем с быстрой ходьбы.'],
+  knees:[17.79,20.08,'Колени смотрят туда же, куда носки.'],
+  nohold:[20.3,21.66,'Не задерживай дыхание.'],
+  dizzy:[21.8,24.75,'Если закружилась голова, остановись и присядь.'],
+  chestpain:[25.04,28.17,'При боли в груди или одышке сразу вызывай скорую.'],
+  cramps:[28.29,32.47,'Болит живот в эти дни? Тёплая грелка и мягкая растяжка помогут.'],
+  sleepfirst:[32.74,34.68,'Сон важнее лишней тренировки.'],
+  phone:[34.98,36.73,'Отложи телефон за час до сна.'],
+  three:[37.1,39.54,'Назови три хорошие вещи за сегодня.'],
+  thoughts:[39.66,41.88,'Заметь свои мысли и не спорь с ними.'],
+  wavefeel:[42.21,44.03,'Это чувство пройдёт, как волна.'],
+  heart:[44.32,47.18,'Положи руку на сердце и сделай медленный выдох.'],
+  worth:[47.51,49.61,'Ты важна просто так, без условий.'],
+  compare:[50.01,52.52,'Сравнивай себя только с собой вчерашней.'],
+  restprog:[52.82,55.03,'Отдых — это тоже часть прогресса.'],
+  notweight:[55.24,58.52,'Вес не главное: смотри на силу и самочувствие.'],
+  cutie:[58.52,59.37,'Красотулька!']}};
 const avLine=k=>{if(AV_LINES[k])return[...AV_LINES[k],'talk',k];if(AV_LINES2[k])return[...AV_LINES2[k],'talk2',k];
  for(const f in AV_MORE)if(AV_MORE[f][k])return[...AV_MORE[f][k],f,k];return null;};
 /* gestures for situations (tools/avsplit.py cuts them from the Kling clips):
@@ -7109,7 +7109,8 @@ function avGL(cv){let gl;try{gl=cv.getContext('webgl',{premultipliedAlpha:true,a
 function avVid(kind){if(AV.vids[kind]){AV.vids[kind].used=performance.now();return AV.vids[kind];}
  /* keep a handful of small phrase files around; drop the oldest ones */
  const ks=Object.keys(AV.vids).filter(k=>/^k:/.test(k)&&k!==AV.kind&&!AV.vids[k].keep);
- if(ks.length>7){ks.sort((a,b)=>AV.vids[a].used-AV.vids[b].used).slice(0,ks.length-7).forEach(k=>{const o=AV.vids[k];o.removeAttribute('src');o.load();o.remove();delete AV.vids[k];});}
+ const max=matchMedia('(max-width:600px)').matches?3:6;   // phones: fewer video decoders at a time
+ if(ks.length>max){ks.sort((a,b)=>AV.vids[a].used-AV.vids[b].used).slice(0,ks.length-max).forEach(k=>{const o=AV.vids[k];o.removeAttribute('src');o.load();o.remove();delete AV.vids[k];});}
  const v=document.createElement('video');v.used=performance.now();
  v.muted=true;v.playsInline=true;v.setAttribute('playsinline','');v.setAttribute('muted','');v.preload='auto';v.src=/^k:/.test(kind)?avDir()+kind.slice(2)+'.mp4':ALINA_VID[kind];
  v.style.cssText='position:fixed;left:0;bottom:0;width:2px;height:2px;opacity:0;pointer-events:none';v.setAttribute('aria-hidden','true');
@@ -7119,7 +7120,12 @@ function avCanvas(){const cv=document.querySelector('#coach canvas.avid');if(!cv
  if(cv!==AV.cv){AV.cv=cv;AV.gl=avGL(cv);if(!AV.gl)AV.on=false;}return AV.gl?cv:null;}
 /* cut = switch in one frame (both pictures show the same hub pose then); otherwise a soft dissolve */
 function avShow(on,cut){AV.shown=on;const f=document.querySelector('#coach .alinafig');if(!f)return;f.classList.toggle('vcut',!!cut);f.classList.toggle('vplay',on);}
-function avDraw(gl,cv,v){gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,v);gl.viewport(0,0,cv.width,cv.height);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);gl.drawArrays(gl.TRIANGLE_STRIP,0,4);}
+/* draw only when the video shows a new frame (the screen refreshes twice as often as the video: uploading the same
+   picture again only loaded the computer); the canvas is as big as the video's half (small on phones) */
+function avDraw(gl,cv,v){const t=v.currentTime;if(cv._v===v&&cv._t===t&&!v.seeking)return;
+ const w=v.videoWidth>>1,h=v.videoHeight;if(w&&(cv.width!==w||cv.height!==h)){cv.width=w;cv.height=h;}
+ cv._v=v;cv._t=v.seeking?NaN:t;
+ gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,v);gl.viewport(0,0,cv.width,cv.height);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);gl.drawArrays(gl.TRIANGLE_STRIP,0,4);}
 function avTick(){AV.raf=0;const v=AV.kind&&AV.vids[AV.kind];if(!v||(v.paused&&!v.ended))return;
  if(v.ended||v.currentTime>=AV.end-.03){const cb=AV.onend,k=AV.kind;avStop(true);if(cb)cb();if(!AV.kind)avRelease(k,true);return;}
  const cv=avCanvas(),ready=v.readyState>=2&&!v.seeking;
@@ -7131,8 +7137,8 @@ function avTick(){AV.raf=0;const v=AV.kind&&AV.vids[AV.kind];if(!v||(v.paused&&!
    on a hub frame — both switches happen between two identical pictures. */
 let AVH=null;
 const avIdleVid=()=>AV.vids[/^k:/.test(ALINA_VID.idle||'')?ALINA_VID.idle:'idle'];
-const avIdleOn=()=>{const v=avIdleVid();return!!(AVH&&v&&!v.paused&&v.readyState>=2&&document.querySelector('#coach .alinafig.vidle'));};
-const avIdleFrame=()=>Math.round(avIdleVid().currentTime*AVH.fps)%AVH.len;
+const avIdleOn=()=>{const v=avIdleVid();return!!(AVH&&v&&(!v.paused||AV.frozen)&&v.readyState>=2&&document.querySelector('#coach .alinafig.vidle'));};
+const avIdleFrame=()=>Math.floor(avIdleVid().currentTime*AVH.fps+.01)%AVH.len;
 /* frames until the idle loop shows the hub next */
 const avToHub=()=>{const c=avIdleFrame();return Math.min(...AVH.hubs.map(h=>(h-c+AVH.len)%AVH.len));};
 const IDLE={cv:null,gl:null,raf:0};
@@ -7142,11 +7148,28 @@ function avIdle(){if(!AV.on||!ALINA_VID.idle||matchMedia('(prefers-reduced-motio
  if(!IDLE.raf){const tick=()=>{IDLE.raf=0;if(v.paused||COACH.min)return;
    if(v.readyState>=2&&IDLE.cv&&IDLE.cv.isConnected){avDraw(IDLE.gl,IDLE.cv,v);const f=IDLE.cv.closest('.alinafig');if(f&&!f.classList.contains('vidle'))f.classList.add('vidle');
     /* a clip is waiting for the hub: start it on this very frame (or dissolve when it waited too long) */
-    const P=AV.pend;if(P&&AVH){
-     /* on the way out of the hub: turn her movement around (the mirrored frame is the same picture) to come back sooner */
-     if(!P.turned&&AVH.segs){const p=avIdleFrame(),g=AVH.segs.find(x=>p>=x[0]&&p<x[1]);if(!g||p-g[0]>=(g[1]-g[0])/2-2)P.turned=1;else if(p-g[0]>2){P.turned=1;try{v.currentTime=(g[0]+g[1]-p+.5)/AVH.fps;}catch(e){}}}
-     if(!v.seeking&&(avToHub()<=1||performance.now()>P.deadline))avGo(performance.now()<=P.deadline);}}
+    const P=AV.pend;if(P&&AVH&&!v.seeking){
+     if(performance.now()>P.deadline)avGo(false);
+     else if(AVH.entries)avApproach(P,v);
+     else if(avToHub()<=1)avGo(true);}}
    IDLE.raf=requestAnimationFrame(tick);};IDLE.raf=requestAnimationFrame(tick);}}
+/* the seamless loop has one hub (frame 0) and ways in (av/in<frame>.mp4: a short morph from that frame of the loop to the
+   hub). The next point at least 6 frames ahead is picked — a way in, or the hub itself near the end of the loop; when the
+   loop shows it, the loop is frozen on that very frame and the way in (then the clip) plays on top: no jump anywhere. */
+function avApproach(P,v){const c=avIdleFrame();
+ if(P.at!=null&&(c>=P.at||c<P.c0)){                    // reached (c<P.c0: the loop came round to the hub)
+  const hub=P.at>=AVH.len,ev=!hub&&AV.vids['k:in'+P.at];
+  if(hub||ev&&ev.readyState>=2){v.pause();AV.frozen=true;if(hub)avGo(true);else avIn(P,ev);return;}
+  P.at=null;}                                         // its file wasn't ready: the next one
+ if(P.at==null){P.c0=c;P.at=AVH.entries.find(e=>e-c>=6);if(P.at==null)P.at=AVH.len;
+  else{const ev=avVid('k:in'+P.at);ev.keep=1;if(ev.currentTime)try{ev.currentTime=0;}catch(e){}}}}
+/* play the way in, then the waiting clip from the hub */
+function avIn(P,ev){if(AV.pend!==P||AV.kind!==P.kind){AV.pend=null;return;}AV.pend=null;
+ const main={kind:AV.kind,end:AV.end,onend:AV.onend,onstart:AV.onstart,sound:AV.sound,lips:AV.lips};
+ AV.kind='k:in'+P.at;AV.end=1e9;AV.onstart=null;AV.sound=false;AV.lips=false;AV.cut=true;
+ AV.onend=()=>{Object.assign(AV,main);AV.cut=true;P.start();};
+ const p=ev.play();const go=()=>{if(!AV.raf)AV.raf=requestAnimationFrame(avTick);};
+ if(p&&p.then)p.then(go,()=>{AV.onend();});else go();}
 /* start the waiting clip; cut = we are on the hub (an invisible switch) */
 function avGo(cut){const P=AV.pend;if(!P)return;AV.pend=null;if(AV.kind!==P.kind)return;
  /* silent lips that missed the hub are skipped: she just stays in her living idle (better than a visible joint) */
@@ -7171,13 +7194,13 @@ function avPlay(kind,from,to,o){o=o||{};if(!AV.on||(!avCanvas()&&!o.audio))retur
  return true;}
 /* back to the idle loop: the clip ends on the hub, the hidden idle loop is put on a hub frame and the pictures swap */
 function avRelease(kind,ended){const iv=avIdleVid();
- if(!AVH||!iv||!avIdleOn()){avShow(false);return;}
- let done=false;const fin=()=>{if(done)return;done=true;if(AV.kind)return;avShow(false,ended);};
+ if(!AVH||!iv||!avIdleOn()){AV.frozen=false;if(iv&&iv.paused)avIdle();avShow(false);return;}
+ let done=false;const fin=()=>{if(done)return;done=true;if(AV.kind)return;AV.frozen=false;avIdle();avShow(false,ended);};
  const h=AVH.hubs[Math.floor(Math.random()*AVH.hubs.length)];   // any pass of the hub in her idle film
  iv.addEventListener('seeked',()=>requestAnimationFrame(()=>requestAnimationFrame(fin)),{once:true});setTimeout(fin,450);   // the decoder needs a frame to show the new picture
  try{iv.currentTime=(h+.5)/AVH.fps;}catch(e){fin();}}
 function avStop(keep){const k=AV.kind,v=k&&AV.vids[k];AV.pend=null;if(v){v.pause();v.muted=true;}AV.kind=null;AV.sound=false;AV.lips=false;AV.onend=null;
- if(AV.raf){cancelAnimationFrame(AV.raf);AV.raf=0;}if(!keep){if(AV.shown)avRelease(k,false);else avShow(false);}}
+ if(AV.raf){cancelAnimationFrame(AV.raf);AV.raf=0;}if(!keep){if(AV.shown)avRelease(k,false);else{avShow(false);if(AV.frozen){AV.frozen=false;avIdle();}}}}
 const avSpeaking=()=>!!(AV.sound&&AV.kind&&!AV.lips);
 /* silent lips for any text: short muted pieces of talking (each from the hub back to the hub), chained while it types;
    the piece playing when the text is done finishes, so she ends her sentence instead of freezing */
@@ -7186,7 +7209,9 @@ function avLips(){avPlay('lips',0,0,{lips:true,key:AV_LIPS[Math.floor(Math.rando
 /* the files she needs first are fetched while the page settles: lips, the wave and her first words */
 function avWarm(){if(!AV_SPLIT||AV.warm||!AV.on)return;AV.warm=1;
  const hr=new Date().getHours();
- if(!AVH)fetch(ALINA_VID.av+'hub.json').then(r=>r.ok?r.json():null).then(j=>{if(j)AVH=j;}).catch(()=>{});
+ /* the ways into the hub are tiny (a few dozen KB): all of them are kept ready, so a phrase never waits for one */
+ if(!AVH)fetch(ALINA_VID.av+'hub.json').then(r=>r.ok?r.json():null).then(j=>{if(!j)return;AVH=j;
+  if(j.entries)setTimeout(()=>j.entries.forEach(e=>{avVid('k:in'+e).keep=1;}),2500);}).catch(()=>{});
  setTimeout(()=>['lips1','lips2','wave',hr<5?'night':hr<12?'morning':hr<18?'day':'evening'].forEach(k=>{avVid('k:'+k).keep=1;}),1200);}
 /* her voice for several recorded pieces one after another (workout player); works even when the corner Alina is hidden */
 function avVoice(keys){if(!AV.on||LANG!=='ru'||!AV.unlocked)return false;const ls=keys.map(avLine);if(ls.some(l=>!l))return false;
