@@ -7085,7 +7085,7 @@ const avLine=k=>{if(AV_LINES[k])return[...AV_LINES[k],'talk',k];if(AV_LINES2[k])
 /* gestures for situations (tools/avsplit.py cuts them from the Kling clips):
    wave = hello/bye (short), cheer/cheer2 = praise (thumbs up to the chest), party = big moments, sigh = sympathy
    (the sigh with a glance aside, cut out of her idle loop so it never plays while she simply waits) */
-const AV_MOVES={wave:1,cheer:1,cheer2:1,party:1,sigh:1};
+const AV_MOVES={wave:1,cheer:1,cheer2:1,party:1,sigh:1,shy:1};   // shy = a shy smile with lowered eyes (thanks, compliments)
 const avMoveKey=mood=>mood==='cheer'?(Math.random()<.5?'cheer':'cheer2'):mood==='sad'?'sigh':AV_MOVES[mood]?mood:null;
 const AV={on:!!window.ALINA_VID,gl:null,cv:null,vids:{},kind:null,end:0,sound:false,lips:false,onend:null,unlocked:false,shown:false,raf:0,pend:null};
 /* the website has every phrase and gesture as its own small file (tools/avsplit.py): av/ for big screens, avm/ for phones
@@ -8099,7 +8099,8 @@ function chatPush(m){S.chat=S.chat||[];S.chat.push(Object.assign({ts:Date.now()}
 async function chatSend(text){text=String(text||'').trim();if(!text||AI.busy)return;AI.draft='';const q=$('#chatq');if(q)q.value='';
  chatPush({role:'user',content:text});const log=$('#chatlog');if(log){log.insertAdjacentHTML('beforeend',chatBubble({role:'user',content:text}));}
  const f=analyzeText(text).filter(x=>x.sev==='urgent');
- if(AI.state!=='ready'||!AI.sample){await cbLoad();const r=builtinReply(text);chatPush({role:'assistant',content:r,local:true});if(log)log.insertAdjacentHTML('beforeend',chatBubble({role:'assistant',content:r}));chatScroll();return;}
+ if(AI.state!=='ready'||!AI.sample){await cbLoad();const r=builtinReply(text);
+  if(['thanks','compliment','compliment2'].includes(CB.last)&&CB.hit&&AV.on&&!AV.kind)avPlay('move',0,0,{key:'shy'});chatPush({role:'assistant',content:r,local:true});if(log)log.insertAdjacentHTML('beforeend',chatBubble({role:'assistant',content:r}));chatScroll();return;}
  if(log)log.insertAdjacentHTML('beforeend',`<div class="msg her" id="live"><div class="mb"><span class="typing"><i></i><i></i><i></i></span> ${f.length?'':L('думаю…')}</div></div>`);chatScroll();
  AI.busy=true;AI.changed=false;AI.ctl=new AbortController();$('#chatsend').disabled=true;$('#chatstop').hidden=false;
  const turns=(S.chat||[]).filter(m=>!m.err&&!m.local).slice(-16).map(m=>({role:m.role,content:m.content}));while(turns.length&&turns[0].role!=='user')turns.shift();
