@@ -5719,6 +5719,13 @@ function parseSecs(r){if(!r)return null;const m=String(r).match(/(\d+)\s*с(\b|$
 function estMin(blocks){let s=0;blocks.forEach(b=>{if(b.type==='seq')b.items.forEach(it=>{s+=(it[1]||b.work||60)*b.rounds+(b.rest||0)*b.rounds;});else b.items.forEach(it=>{const hs=parseSecs(it[2]);s+=it[1]*((hs||45)+(b.rest||60));});});return Math.round(s/60);}
 function doseTxt(b,it){if(b.type==='seq'){const sec=it[1]||b.work;return sec>=60?L('{0} мин',fmtN(Math.round(sec/60*10)/10)):L('{0} с',sec);}return `${it[1]} × ${L(it[2])}`;}
 
+/* protein in palms: one palm-sized portion (meat, fish, cottage cheese, 3 eggs, tofu) ≈ 25 g. Counting palms is far easier
+   than counting grams, and enough protein is what keeps muscles (and the shape) while she loses fat */
+function palmRow(dd,nr){const n=Math.max(3,Math.min(7,Math.round(nr.p/25))),pc=dd.palm||0;
+ return`<div class="fld palms" style="margin-top:10px"><label>🖐 ${L('Белок по ладоням: {0} из {1}',pc,n)} <span class="small muted">${L('(ладонь мяса, рыбы, творога или 3 яйца ≈ 25 г)')}</span></label>
+ <div class="row" style="gap:6px">${Array.from({length:n},(_,i)=>`<button class="btn${i<pc?' pri':''}" style="min-width:44px;padding:6px 8px" data-palm="${i+1}" aria-label="${L('ладонь {0}',i+1)}">${i<pc?'✋':'🤚'}</button>`).join('')}</div>
+ ${pc>=n?`<div class="small" style="color:var(--ok);margin-top:4px">${L('Норма белка на сегодня — есть! Мышцы скажут спасибо 💪')}</div>`:''}</div>`;}
+
 /* ---- orig/cue.js ---- */
 const CHEER=['Отлично, держим!','Ты сильнее, чем думаешь!','Дыши ровно!','Ещё чуть-чуть!','Красиво работаешь!','Половина позади!'];
 const CUE={bridge:'Пятки в пол, колени наружу, сжимай ягодицы наверху.',splitsquat:'Вниз вертикально, вес на передней пятке.',goblet:'Таз назад и вниз, пятки на полу, спина прямая.',reversehyper:'Сожми ягодицы, ноги до линии корпуса.',slbridge:'Таз ровно, толкайся пяткой.',hipthrust:'Подбородок к груди, таз до горизонтали, пауза наверху.',frog:'Стопы вместе, колени в стороны, короткие быстрые подъёмы.',chairsquat:'Таз назад, колени по линии носков.',sumo:'Колени наружу, спина прямая.',rdl:'Таз назад, спина прямая, колени не меняют угол.',slrdl:'Корпус и нога — одна линия.',revlunge:'Широкий шаг назад, вес на передней пятке.',bulgarian:'Опускаемся вниз, колено смотрит на носок.',stepup:'Вставай за счёт верхней ноги.',donkey:'Пятка к потолку, без прогиба в пояснице.',hydrant:'Колено в сторону, корпус неподвижен.',sideabd:'Носок вперёд, поднимаем боком ягодицы.',clam:'Стопы вместе, таз не разворачивай.',latwalk:'Держи резинку натянутой, не выпрямляйся.',kickback:'Держись за стул, нога назад без махов.',hamcurl:'Таз наверху всё время.',pushup:'Тело — прямая доска, локти под сорок пять градусов.',pushprog:'Тело прямое, опускайся медленно.',row:'Локти назад, своди лопатки.',onearmrow:'Спина прямая, локти назад к поясу.',pulldown:'Растягивай резинку, локти вниз к рёбрам.',facepull:'Разводи руки, своди лопатки.',pullover:'Прямые руки через стороны вниз.',ohpress:'Рёбра опущены, жми вверх.',latraise:'Ведём локтями до уровня плеч.',chestpress:'Жми вперёд, плечи опущены.',triext:'Локти неподвижны у головы.',curl:'Локти прижаты к бокам.',tricepskb:'Плечо прижато, разгибай руку назад.',deadbug:'Поясница прижата к полу.',ballbug:'Дави в мяч, поясница прижата.',birddog:'Таз ровно, тянись в длину.',plank:'Таз подкручен, живот и ягодицы напряжены.',sideplank:'Локоть под плечом, таз вверх.',vacuum:'Полный выдох и втяни живот под рёбра.',ballcrunch:'Рёбра к тазу, шею не тяни.',stirpot:'Маленькие круги локтями, таз неподвижен.',joints:'Плавные круги, без рывков.',march:'Колено до уровня таза, руки работают.',steptouch:'Мягкие колени, двигайся в ритме.',stepjack:'Нога в сторону, руки вверх.',boxing:'Удар с поворотом корпуса, кулак к лицу.',squatcalf:'Присед и подъём на носки.',climber:'Колено к груди, таз не поднимай.',jumpsquat:'Мягкое приземление в присед.',ladder:'Работай на передней части стопы.',fig4:'Расслабься и дыши.',hipflex:'Подкрути таз и подай вперёд.',hamstr:'Колено почти прямое, тяни мягко.',quad:'Колени рядом, таз подкручен.',butterfly:'Спина прямая, наклон мягко.',chest:'Плечо опущено, разворот от стены.',shoulder:'Плечи опущены.',catcow:'Выдох — спина вверх, вдох — прогиб.',childpose:'Дыши животом и расслабься.',twist:'Плечи прижаты к полу.',mfr:'Медленно, на выдохе, без сильной боли.'};
@@ -5776,6 +5783,8 @@ function plRender(keepTimer){
   if(st.kind==='timed')h+=`<div class="dose">${st.rounds>1?L('Круг {0} из {1}',st.round,st.rounds)+' · ':''}${doseTxt({type:'seq',work:st.secs},[st.ex,st.secs])}</div>`;
   else h+=`<div class="dose">${L('Подход {0} из {1}',Math.min(PL.set+1,st.sets),st.sets)} · ${esc(L(st.reps))}</div><div class="setdots">${Array.from({length:st.sets},(_,i)=>`<i class="${i<PL.set?'d':''}"></i>`).join('')}</div>`;
   if(st.note)h+=`<div class="muted" style="text-align:center">${esc(L(st.note))}</div>`;
+  const ltip=st.kind==='sets'&&PL.set===0&&PL.mode==='idle'&&liftable(st)?liftTip(st.ex,PL.iso):'';
+  if(ltip)h+=`<div class="note info small" style="max-width:440px;margin:6px auto">💡 ${esc(ltip)}</div>`;
   h+=`<div class="stage" data-anim="${e.id}" data-autoplay="${st.kind==='timed'?1:0}"></div>`;
   if(st.kind==='timed'){h+=`<div class="clock" id="clk">${Math.floor(st.secs/60)}:${pad(st.secs%60)}</div><div class="bar" style="max-width:420px;margin:8px auto"><i id="tbar" style="width:0"></i></div><div class="ctr">`;
    h+=PL.mode==='run'?`<button class="btn" data-a="pause">${PL.paused?L('▶ Продолжить'):L('⏸ Пауза')}</button><button class="btn" data-a="skip">${L('Дальше →')}</button>`:`<button class="btn pri big" data-a="go">${L('▶ Старт')}</button><button class="btn" data-a="skip">${L('Пропустить')}</button>`;h+='</div>';}
@@ -5797,12 +5806,18 @@ function plRender(keepTimer){
 }
 function plFinish(){plStop();PL.mode='done';const dd=getDay(PL.iso);
  if(PL.custom){const n=(dd.post||0)+1;setDay(PL.iso,'post',n);$('#player').innerHTML=`<div class="pl" style="justify-content:center;text-align:center"><div style="font-size:64px">🧍‍♀️</div><h2>${L('Осанка размята!')}</h2><p class="muted">${L('Сегодня уже {0} {1}. Плечи вниз, макушка вверх 💛',n,plural(n,'разминка','разминки','разминок'))}</p><div class="ctr"><button class="btn pri big" data-a="close">${L('Готово')}</button></div></div>`;beep(880,.15);say(L('Отлично, {0}! Спина скажет спасибо.',NM()));return;}
- $('#player').innerHTML=`<div class="pl" style="justify-content:center;text-align:center"><div style="font-size:64px">🎉</div><h2>${L('Тренировка выполнена!')}</h2><p class="muted">${L('Ещё один шаг к цели. Как она прошла?')}</p>
+ $('#player').innerHTML=`<div class="pl" style="justify-content:center;text-align:center"><div style="font-size:64px">🎉</div><h2>${L('Тренировка выполнена!')}</h2><p class="muted">${L('Ещё один шаг к цели. Как она прошла?')}</p>${liftAsk(PL.steps[PL.i])}
  <div class="ctr"><div class="seg" id="rpeseg">${[['e','😌 Легко'],['n','💪 Нормально'],['h','🥵 Тяжело']].map(r=>`<button data-r="${r[0]}" class="${dd.rpe===r[0]?'on':''}">${L(r[1])}</button>`).join('')}</div></div>
  <div class="ctr"><label class="tog"><input type="checkbox" id="plpain" ${dd.pain?'checked':''}> ${L('Были боли в коленях или спине')}</label></div>
  <div class="ctr"><button class="btn pri big" data-a="save">${L('Сохранить и закрыть')}</button></div></div>`;
  setDay(PL.iso,'done',true);beep(880,.15);setTimeout(()=>beep(1320,.2),180);say(L('{0}, тренировка выполнена! Ты большая молодец.',NM()));
 }
+/* «легко / в самый раз / тяжело» after an exercise (lift.js) */
+$('#player').addEventListener('click',ev=>{const b=ev.target.closest('[data-lift]');if(!b||!PL)return;ev.stopPropagation();
+ const x=b.dataset.lx,kg=$('#player [data-liftkg="'+x+'"]');liftLog(x,b.dataset.lift,kg&&kg.value);
+ b.parentNode.querySelectorAll('[data-lift]').forEach(y=>y.classList.toggle('on',y===b));toast(L('Записала 💪'));},true);
+$('#player').addEventListener('change',ev=>{const x=ev.target.dataset&&ev.target.dataset.liftkg;if(!x||!PL)return;const l=liftHist(x).slice(-1)[0];
+ if(l&&l.d===PL.iso)liftLog(x,l.r,ev.target.value);});
 $('#player').addEventListener('click',ev=>{const b=ev.target.closest('[data-a],[data-r]');if(!b||!PL)return;
  if(b.dataset.r){setDay(PL.iso,'rpe',b.dataset.r);$$('#rpeseg button').forEach(x=>x.classList.toggle('on',x===b));return;}
  const a=b.dataset.a,st=PL.steps[PL.i];
@@ -5821,9 +5836,63 @@ $('#player').addEventListener('click',ev=>{const b=ev.target.closest('[data-a],[
 });
 function doneSet(){const st=PL.steps[PL.i];plStop();PL.set++;beep(990,.1);
  if(PL.set>=st.sets){PL.auto=false;const nx=PL.steps[PL.i+1];if(nx){PL.i++;PL.set=0;PL.mode='rest';
-   const ne=EXM[nx.ex];$('#player').innerHTML=`<div class="pl"><div class="pl-top"><button class="x" data-a="close">✕</button><div class="t">${L('Отдых перед следующим упражнением')}</div></div><h2>${L('Отдых')}</h2><div class="clock rest" id="clk"></div><div class="bar" style="max-width:420px;margin:8px auto"><i id="tbar"></i></div><div class="nextup">${L('Далее:')} <b>${esc(L(ne.name))}</b></div><div class="stage" data-anim="${ne.id}" data-autoplay="1" style="max-width:360px;margin:10px auto"></div><div class="ctr"><button class="btn pri" data-a="endrest">${L('Начать →')}</button></div></div>`;
+   const ne=EXM[nx.ex];$('#player').innerHTML=`<div class="pl"><div class="pl-top"><button class="x" data-a="close">✕</button><div class="t">${L('Отдых перед следующим упражнением')}</div></div><h2>${L('Отдых')}</h2><div class="clock rest" id="clk"></div><div class="bar" style="max-width:420px;margin:8px auto"><i id="tbar"></i></div>${liftAsk(st)}<div class="nextup">${L('Далее:')} <b>${esc(L(ne.name))}</b></div><div class="stage" data-anim="${ne.id}" data-autoplay="1" style="max-width:360px;margin:10px auto"></div><div class="ctr"><button class="btn pri" data-a="endrest">${L('Начать →')}</button></div></div>`;
    hydrate($('#player'));say(L('Отдых. Далее: {0}.',L(ne.name)));plTimer(Math.min(st.rest,90),()=>{PL.mode='idle';plRender();});}else plFinish();}
  else{PL.mode='rest';plRender(true);say(L('Отдых {0} секунд.',st.rest),1);plTimer(st.rest,()=>{PL.mode='idle';plRender();say(`${L('Подход {0}.',PL.set+1)} ${cue(st.ex)}`);});}}
+
+/* ---- lift.js ---- */
+/* ============ STRENGTH PROGRESSION ============
+   The main reason results stop after 4–6 weeks is the same load every time. After each strength exercise she taps how it
+   felt (easy / just right / hard) and, for exercises with weights, the kilograms. Next time Alina says what to do:
+   easy → a little heavier (+1–2 kg) or +2 reps; just right → same weight, one more rep or a slower lowering;
+   hard twice in a row → lighter or fewer reps. Never in a deload week, after pain, in pregnancy, for kids or in care mode.
+   Stored in S.lift = {exId: [{d, r:'e'|'n'|'h', kg}]}, the last 8 sessions of each exercise. */
+const LIFT_N=8;
+const liftable=st=>{const e=st&&EXM[st.ex];return!!(e&&st.kind==='sets'&&!st.hold&&['glute','upper','core'].includes(e.cat));};
+const liftKg=e=>(e.eq||[]).some(x=>x==='db'||x==='gym')||/гантел|штанг|гир[яеи]|рюкзак/i.test(e.name);
+const liftHist=ex=>(S.lift&&S.lift[ex])||[];
+function liftLog(ex,r,kg){S.lift=S.lift||{};const a=S.lift[ex]||(S.lift[ex]=[]),d=PL?PL.iso:todayIso(),o={d,r};
+ const k=num(kg);if(k&&k>0&&k<300)o.kg=k;else{const l=a[a.length-1];if(l&&l.kg&&!kg)o.kg=l.kg;}
+ if(a.length&&a[a.length-1].d===d)a[a.length-1]=o;else a.push(o);if(a.length>LIFT_N)a.splice(0,a.length-LIFT_N);save();}
+/* why the load should not go up today (or '') */
+function liftHold(dIso){const s=ST_();if(!s)return'';
+ if(isPreg()||who()==='kid'||s.gtype==='postnatal')return L('Сейчас главное — техника и самочувствие, нагрузку не повышаем.');
+ for(let i=0;i<7;i++){const dd=getDay(iso(addD(P(dIso),-i)));if(dd.pain||(dd.sym||[]).includes('joint'))return L('На этой неделе были боли — нагрузку не повышаем, работаем аккуратно и без боли.');}
+ if(normFor(dIso).deload)return L('Неделя разгрузки: вес как обычно или чуть меньше, ничего не усложняем — так тело восстанавливается и потом растёт.');
+ if(s.care)return L('Бережный режим: держим ту же нагрузку, без рекордов.');return'';}
+/* Alina's advice for this exercise today, from how it went last time */
+function liftTip(ex,dIso){const h=liftHist(ex).filter(x=>x.d<dIso),l=h[h.length-1];if(!l)return'';
+ const p=h[h.length-2],kg=l.kg?L(' ({0} кг)',fmtN(l.kg)):'',hold=liftHold(dIso),e=EXM[ex],w=e&&liftKg(e)&&l.kg;
+ if(hold)return hold;
+ if(l.r==='e')return w?L('В прошлый раз было легко{0}. Сегодня возьми чуть тяжелее: +1–2 кг, повторы те же 💪',kg)
+  :L('В прошлый раз было легко. Сегодня усложни: +2 повтора в каждом подходе или опускайся медленнее (3 секунды) 💪');
+ if(l.r==='n')return L('В прошлый раз — в самый раз{0}. Сегодня та же нагрузка: попробуй сделать на 1 повтор больше в каждом подходе.',kg);
+ if(p&&p.r==='h')return w?L('Два раза подряд было тяжело{0}. Сегодня вес на 1–2 кг меньше — чистая техника важнее.',kg)
+  :L('Два раза подряд было тяжело. Сегодня сделай на 2 повтора меньше или облегчённый вариант — чистая техника важнее.');
+ return L('В прошлый раз было тяжело{0}. Сегодня та же нагрузка, без спешки — тело привыкает.',kg);}
+/* the question after the last set of an exercise */
+function liftAsk(st){if(!liftable(st))return'';const e=EXM[st.ex],l=liftHist(st.ex).slice(-1)[0],today=l&&l.d===PL.iso?l:null;
+ return`<div class="card" style="max-width:440px;margin:10px auto;text-align:center"><b>${L('Как прошло «{0}»?',esc(L(e.name)))}</b>
+ <div class="seg" style="margin:8px 0;justify-content:center">${[['e','😌 Легко'],['n','💪 В самый раз'],['h','🥵 Тяжело']].map(r=>`<button data-lift="${r[0]}" data-lx="${st.ex}" class="${today&&today.r===r[0]?'on':''}">${L(r[1])}</button>`).join('')}</div>
+ ${liftKg(e)?`<label class="small">${L('Вес, кг (если был)')} <input type="text" inputmode="decimal" data-liftkg="${st.ex}" value="${today&&today.kg?today.kg:l&&l.kg?l.kg:''}" style="width:70px;text-align:center"></label>`:''}
+ <div class="small muted" style="margin-top:4px">${L('Так я подскажу в следующий раз, когда пора усложнять.')}</div></div>`;}
+/* a short line for the plan and the player: the last result of this exercise */
+function liftLast(ex){const l=liftHist(ex).slice(-1)[0];if(!l)return'';
+ return`${l.r==='e'?'😌':l.r==='n'?'💪':'🥵'} ${l.kg?fmtN(l.kg)+' '+L('кг')+' · ':''}${fmtD(P(l.d))}`;}
+/* «Моя сила»: how many exercises got heavier or harder since the start */
+function liftCard(){const L_=S.lift||{},ids=Object.keys(L_).filter(k=>EXM[k]&&L_[k].length);if(!ids.length)return'';
+ const rows=ids.map(k=>{const a=L_[k],f=a.find(x=>x.kg),l=[...a].reverse().find(x=>x.kg),up=f&&l&&l.kg>f.kg?r1(l.kg-f.kg):0,easy=a.filter(x=>x.r==='e').length;return{k,a,f,l,up,easy};})
+  .sort((x,y)=>y.up-x.up||y.easy-x.easy).slice(0,8);
+ const grew=rows.filter(r=>r.up>0).length;
+ return`<div class="card"><h3>🏋️‍♀️ ${L('Моя сила')}</h3><p class="small muted" style="margin-top:0">${grew?L('Ты стала сильнее в {0} {1} — это и есть результат, даже когда весы стоят.',grew,plural(grew,'упражнении','упражнениях','упражнениях')):L('Отмечай после упражнений «легко / в самый раз / тяжело» — и я буду вести тебя к новым рекордам.')}</p>
+ <ul class="clean">${rows.map(r=>`<li><b>${esc(L(EXM[r.k].name))}</b> — ${r.up?L('+{0} кг ({1} → {2} кг)',fmtN(r.up),fmtN(r.f.kg),fmtN(r.l.kg)):liftLast(r.k)}</li>`).join('')}</ul></div>`;}
+/* «Never miss twice»: one missed workout changes nothing, two in a row start to break the habit — the strongest predictor
+   of whether she reaches the result. Yesterday's missed workout can be done today on a rest day; on a workout day even a
+   lighter session keeps the chain. */
+function missedCard(dIso,pl,dd){if(dd.done||who()==='kid')return'';const y=iso(addD(P(dIso),-1)),py=progDay(y);
+ if(py.d<0||py.week>NW())return'';const yp=planDay(y);if(yp.base.rest||getDay(y).done)return'';
+ if(pl.base.rest)return`<div class="note info"><b>🔁 ${L('Вчерашняя тренировка не сделана')}</b><div class="small">${L('Ничего страшного — главное правило: не пропускать дважды. Сегодня день отдыха, можно сделать вчерашнюю вместо него.')}</div><div style="margin-top:8px"><button class="btn pri" data-act="makeup">${L('▶ Сделать вчерашнюю «{0}»',esc(L(yp.base.t)))}</button></div></div>`;
+ return`<div class="note info"><b>🔁 ${L('Не пропускаем дважды')}</b><div class="small">${L('Вчера не получилось — это нормально. Сегодня важно хотя бы начать: даже облегчённая тренировка сохраняет привычку, а привычка и даёт результат.')}</div>${pl.light?'':`<div style="margin-top:8px"><button class="btn" data-act="light">${L('Облегчить сегодняшнюю')}</button></div>`}</div>`;}
 
 /* ---- orig/cycledata.js ---- */
 const FLOW=[['none','Нет'],['spot','Мажущие'],['light','Слабые'],['med','Средние'],['heavy','Обильные']];
@@ -7529,7 +7598,7 @@ function workoutList(pl,dIso,interactive){
  pl.blocks.forEach((b,bi)=>{
   h+=`<div class="blk"><div class="blk-h">${esc(L(b.name))}${b.type==='seq'&&b.rounds>1?` <span class="chip">${b.rounds} ${plural(b.rounds,'круг','круга','кругов')}${b.work?` · ${L('{0} с работа',b.work)}${b.rest?` / ${L('{0} с отдых',b.rest)}`:''}`:''}</span>`:''}${b.type==='sets'?` <span class="chip">${L('отдых {0} с',b.rest)}</span>`:''}</div>`;
   b.items.forEach((it,ii)=>{const e=EXM[it[0]],k=bi+'-'+ii,note=b.type==='sets'?it[3]:it[2];
-   h+=`<details class="wi" data-k="${k}"><summary>${interactive?`<input type="checkbox" data-exk="${k}" ${ex[k]?'checked':''} aria-label="${L('выполнено')}">`:''}<span class="thumb">${e.ladder?'<span style="display:grid;place-items:center;height:100%">🪜</span>':exFrames(e)[e.p.length>1&&e.anim!==false?1:0]}</span><span class="nm">${esc(L(e.name))}${note?`<small>${esc(L(note))}</small>`:''}</span><span class="dose">${esc(doseTxt(b,it))}</span><span class="chev">›</span></summary><div class="inner" data-lazy="${e.id}"></div></details>`;});
+   h+=`<details class="wi" data-k="${k}"><summary>${interactive?`<input type="checkbox" data-exk="${k}" ${ex[k]?'checked':''} aria-label="${L('выполнено')}">`:''}<span class="thumb">${e.ladder?'<span style="display:grid;place-items:center;height:100%">🪜</span>':exFrames(e)[e.p.length>1&&e.anim!==false?1:0]}</span><span class="nm">${esc(L(e.name))}${note?`<small>${esc(L(note))}</small>`:''}${b.type==='sets'&&liftHist(e.id).length?`<small>${L('В прошлый раз:')} ${liftLast(e.id)}</small>`:''}</span><span class="dose">${esc(doseTxt(b,it))}</span><span class="chev">›</span></summary><div class="inner" data-lazy="${e.id}"></div></details>`;});
   h+='</div>';});
  return h;}
 function dateNav(dIso){const d=P(dIso),t=todayIso();return`<div class="datenav noprint"><button data-go="${iso(addD(d,-1))}">‹</button><span class="d">${cap(WD()[d.getDay()])}, ${fmtD(d)}</span><button data-go="${iso(addD(d,1))}">›</button>${dIso!==t?`<button data-go="${t}">${L('Сегодня')}</button>`:''}</div>`;}
@@ -7550,6 +7619,7 @@ function vToday(dIso){
  ${heroKpis(dIso,pd)}</div>`;
  h+=quoteCard(dIso);if(s.care)h+=careBanner();if(isT){h+=safetyCard();h+=alertCard();if(treAllowed())h+=treCard();h+=friendCard();}
  if(ad.msgs&&ad.msgs.length&&pd.week>1)h+=`<div class="card"><h3>🔄 ${L('Что изменилось на этой неделе')}</h3>${ad.msgs.map(note_).join('')}<div class="small muted">${L('Изменения рассчитаны по итогам недели {0}: вес, тренировки, самочувствие.',pd.week-1)}</div></div>`;
+ if(isT)h+=missedCard(dIso,pl,dd);
  // workout
  h+=`<div class="card" id="wcard"><h3>🏋️ ${pl.base.rest?L('Сегодня'):L('Тренировка дня')}: ${esc(L(pl.base.t))}</h3>`;
  if(pl.base.rest){h+=`<p>${esc(L(pl.base.d))}</p><p class="muted">${L('Отдых — часть программы: в эти дни мышцы восстанавливаются и растут. Главное — шаги и нормальная еда.')}</p>`;}
@@ -7570,6 +7640,7 @@ function vToday(dIso){
  ${s.noCount?'':`<div class="fld"><label>${L('Съедено, ккал')}</label><input type="text" inputmode="numeric" data-f="kcal" value="${esc(dd.kcal||'')}" placeholder="${nr.kcal}"></div>`}
  <div class="fld"><label>${L('Белок, г')}</label><input type="text" inputmode="numeric" data-f="prot" value="${esc(dd.prot||'')}" placeholder="${nr.p}"></div>
  <div class="fld"><label>${L('Сон, ч')}</label><input type="text" inputmode="decimal" data-f="sleep" value="${esc(dd.sleep||'')}" placeholder="8"></div></div>
+ ${palmRow(dd,nr)}
  ${pl.base.rest?'':`<div style="margin-top:12px" class="fld"><label>${L('Как далась тренировка')}</label><div class="seg" id="rpe">${[['e','😌 Легко'],['n','💪 Нормально'],['h','🥵 Тяжело']].map(r=>`<button data-rpe="${r[0]}" class="${rpe===r[0]?'on':''}">${L(r[1])}</button>`).join('')}</div></div>`}
  <div class="row" style="margin-top:12px"><label class="tog"><input type="checkbox" data-f="pain" ${dd.pain?'checked':''}> ${L('🦵 Боль в коленях/спине')}</label><label class="tog"><input type="checkbox" data-f="knee" ${dd.knee?'checked':''}> ${L('Щадящие упражнения сегодня')}</label></div>
  <div class="fld" style="margin-top:10px"><label>${L('Заметка и мысли (помощница прочитает)')}</label><textarea rows="2" data-f="note" placeholder="${L('Самочувствие, что было сложно…')}">${esc(dd.note||'')}</textarea></div>
@@ -7692,6 +7763,7 @@ function vGoal(){const s=ST_(),N=NW(),gt=GTYPES.find(g=>g[0]===s.gtype)||GTYPES[
  return`<h1 class="page-h">${L('Моя цель')}</h1><p class="page-sub">${L('Что мы делаем и почему — чтобы помнить, ради чего каждая тренировка.')}</p>
  <div class="card hero"><div class="hi">${esc(head)}</div><p style="margin:6px 0 0">${L('Сила, энергия, крепкая спина, ровная осанка и здоровые волосы — тело, которое тебя носит и радует.')} ${esc(sub)}</p>${['lose','tone','glutes'].includes(s.gtype)?`<p class="small muted" style="margin:8px 0 0">${L('Честно: форма фигуры во многом задана костями таза и генетикой. Тренировки подчеркнут талию, спину и ягодицы, но «песочные часы» у каждой свои — и сравнивать себя стоит только с собой вчерашней.')}</p>`:''}</div>
  ${isLose()?chancesCard():''}
+ ${liftCard()}
  <div class="grid2">
  <div class="card"><h3>🍑 ${L('Ягодицы')}</h3><p style="margin-top:0">${L('Выпуклость дают <b>мышцы</b>, а они растут только от силовой нагрузки с прогрессией. Поэтому ягодицы тренируются 2–3 раза в неделю, а каждую неделю что-то немного усложняется: резинка потуже, рюкзак тяжелее, медленнее опускание. Основа — упражнения в растянутом положении: болгарские выпады, глубокий присед, румынская тяга, плюс мосты для верхней точки. Белок обязателен.')}</p></div>
  <div class="card"><h3>⏳ ${L('Талия')}</h3><p style="margin-top:0">${L('Талия становится тоньше, когда уходит жир. Вакуум и глубокие мышцы кора её «стягивают». Наклоны с весом в стороны не делаем: они расширяют талию. Широкая спина и плечи визуально сужают талию.')}</p></div>
@@ -8820,6 +8892,10 @@ document.addEventListener('click',ev=>{
   else playAnim(a,!a.playing);return;}
  const sm=ev.target.closest('summary');if(sm&&ev.target.matches('input[type=checkbox]')){ev.stopPropagation();return;}
  const g=ev.target.closest('[data-go]');if(g){location.hash='#/day/'+g.dataset.go;return;}
+ /* protein by palms: a tap fills the palms up to this one (tapping the last filled one takes it back); grams follow */
+ const pm_=ev.target.closest('[data-palm]');if(pm_){const d=$('#view').dataset.day,dd=getDay(d),n=+pm_.dataset.palm,v=(dd.palm||0)===n?n-1:n;
+  const auto=!dd.prot||+dd.prot===(dd.palm||0)*25;setDay(d,'palm',v||null);if(auto)setDay(d,'prot',v?v*25:null);
+  const box=pm_.closest('.palms');if(box)box.outerHTML=palmRow(getDay(d),normFor(d));const pi=$('#logcard [data-f="prot"]');if(pi&&auto)pi.value=v?v*25:'';flashSaved();return;}
  const rp_=ev.target.closest('[data-rpe]');if(rp_){const d=$('#view').dataset.day;const v=getDay(d).rpe===rp_.dataset.rpe?null:rp_.dataset.rpe;setDay(d,'rpe',v);$$('#rpe button').forEach(b=>b.classList.toggle('on',b.dataset.rpe===v));flashSaved();return;}
  const th=ev.target.closest('button[data-theme]');if(th&&ev.target.closest('#view')){S.settings.theme=th.dataset.theme;save();applyTheme();rerender();return;}
  const lg=ev.target.closest('[data-lang]');if(lg){setLang(lg.dataset.lang);return;}
@@ -8854,6 +8930,7 @@ document.addEventListener('click',ev=>{
  if(act==='care'){S.settings.care=true;save();rerender();toast(L('Бережный режим включён 💗'));return;}
  if(act==='careoff'){S.settings.care=false;save();rerender();return;}
  if(act==='knee'){setDay(todayIso(),'knee',true);rerender();toast(L('Сегодня — щадящие упражнения'));return;}
+ if(act==='makeup'){const y=iso(addD(P(todayIso()),-1));startPlayer(y);return;}   // yesterday's missed workout, done today
  if(act==='lighttoday'){setDay(todayIso(),'light',true);rerender();toast(L('Сегодняшняя тренировка облегчена'));return;}
  if(act==='nextq'){QOFF++;const c=$('#qcard');if(c)c.outerHTML=quoteCard(d);return;}
  if(act==='jsave'){const t=$('#jtext').value.trim();if(!t)return;(S.journal||(S.journal=[])).push({id:Date.now().toString(36),ts:Date.now(),text:t});save();const f=analyzeText(t);rerender();coachReact('journal',t);toast(f.length?L('Запись сохранена — Алина оставила комментарий'):L('Запись сохранена'));return;}
