@@ -7148,7 +7148,10 @@ function avIdle(){if(!AV.on||!ALINA_VID.idle||matchMedia('(prefers-reduced-motio
      if(!v.seeking&&(avToHub()<=1||performance.now()>P.deadline))avGo(performance.now()<=P.deadline);}}
    IDLE.raf=requestAnimationFrame(tick);};IDLE.raf=requestAnimationFrame(tick);}}
 /* start the waiting clip; cut = we are on the hub (an invisible switch) */
-function avGo(cut){const P=AV.pend;if(!P)return;AV.pend=null;if(AV.kind!==P.kind)return;AV.cut=cut;P.start();}
+function avGo(cut){const P=AV.pend;if(!P)return;AV.pend=null;if(AV.kind!==P.kind)return;
+ /* silent lips that missed the hub are skipped: she just stays in her living idle (better than a visible joint) */
+ if(!cut&&P.lips){AV.kind=null;AV.lips=false;AV.onend=null;return;}
+ AV.cut=cut;P.start();}
 /* play a clip. sound=true tries her voice and falls back to silent lips when the browser refuses */
 function avPlay(kind,from,to,o){o=o||{};if(!AV.on||(!avCanvas()&&!o.audio))return false;
  if(AV_SPLIT&&o.key){kind='k:'+o.key;from=0;to=1e9;}           // the small files are played whole, with their bridges
@@ -7162,16 +7165,15 @@ function avPlay(kind,from,to,o){o=o||{};if(!AV.on||(!avCanvas()&&!o.audio))retur
  /* a clip right after a clip (both on the hub at the joint), or no idle loop on screen: at once */
  if(AV.shown||!avIdleOn()||!/^k:/.test(kind)){AV.cut=!!AV.shown;start();return true;}
  /* otherwise wait for the hub (the workout counting can't wait: it dissolves instead) */
- const cap=o.audio?0:o.lips?2500:4500;
- AV.pend={kind,start,deadline:performance.now()+cap};
+ const cap=o.audio?0:o.lips?3000:6000;
+ AV.pend={kind,start,lips:!!o.lips,deadline:performance.now()+cap};
  if(!cap)avGo(avToHub()<=1);
  return true;}
 /* back to the idle loop: the clip ends on the hub, the hidden idle loop is put on a hub frame and the pictures swap */
 function avRelease(kind,ended){const iv=avIdleVid();
  if(!AVH||!iv||!avIdleOn()){avShow(false);return;}
  let done=false;const fin=()=>{if(done)return;done=true;if(AV.kind)return;avShow(false,ended);};
- /* back on a hub that starts a short calm part, so the next clip won't wait long */
- const hs=(AVH.segs||[]).filter(g=>g[1]-g[0]<=90).map(g=>g[0]),h=hs.length?hs[Math.floor(Math.random()*hs.length)]:AVH.hubs[0];
+ const h=AVH.hubs[Math.floor(Math.random()*AVH.hubs.length)];   // any pass of the hub in her idle film
  iv.addEventListener('seeked',()=>requestAnimationFrame(()=>requestAnimationFrame(fin)),{once:true});setTimeout(fin,450);   // the decoder needs a frame to show the new picture
  try{iv.currentTime=(h+.5)/AVH.fps;}catch(e){fin();}}
 function avStop(keep){const k=AV.kind,v=k&&AV.vids[k];AV.pend=null;if(v){v.pause();v.muted=true;}AV.kind=null;AV.sound=false;AV.lips=false;AV.onend=null;
@@ -7298,7 +7300,7 @@ function coachNext(){const m=COACH.q.shift();if(!m){const b=$('#cbub');if(b)b.hi
  if(!avSpeaking()&&ST_()&&ST_().coachVoice)say(m.text);
  /* with her real voice the text starts together with the voice (the clip may need a moment to load), not before it */
  const type=()=>{if(COACH.cur!==m||m.started)return;m.started=1;clearInterval(COACH.typing);COACH.typing=setInterval(()=>{i+=1;COACH.pos=i;tx.textContent=m.text.slice(0,i);if(i>=m.text.length)coachFinish();},ms||34);};
- if(ms){AV.onstart=type;setTimeout(type,2500);}else type();}
+ if(ms){AV.onstart=type;setTimeout(type,7000);}else type();}   // she may wait up to 6 s for her calm pose before speaking
 function coachFinish(){clearInterval(COACH.typing);COACH.typing=null;COACH.talk=false;if(COACH.cur)COACH.cur.started=1;/* lips: the piece that plays finishes by itself (it ends in her calm pose) */if(!COACH.cur)return;$('#ctext').textContent=COACH.cur.text;coachButtons();}
 function coachButtons(){const m=COACH.cur;if(!m||COACH.typing)return;const ac=$('#cact');if(!ac)return;
  ac.innerHTML=m.acts.map(a=>a[1][0]==='@'?`<button class="btn" data-co="${a[1].slice(1)}">${esc(a[0])}</button>`:a[1][0]==='#'?`<a class="btn" href="${a[1]}">${esc(a[0])}</a>`:`<button class="btn" data-act="${a[1]}">${esc(a[0])}</button>`).join('')+(COACH.q.length?`<button class="btn pri" data-co="next">${L('Дальше ›')}</button>`:'');}
