@@ -551,6 +551,8 @@ body.onfriend #coach{display:none!important}
 
 /* the living idle video already breathes and moves: no drawn sway on top of it (it made her look shaky) */
 #coach .alinafig.vmode.vidle .abody,#coach.talk .alinafig.vmode.vidle .abody{animation:none!important}
+/* no CSS shadow over the video: the browser recomputed it over her whole figure for every video frame (lag, skipped frames) */
+#coach .alinafig.vmode .abody{filter:none}
 
 </style>
 </head>
@@ -7184,7 +7186,11 @@ function avPlay(kind,from,to,o){o=o||{};if(!AV.on||(!avCanvas()&&!o.audio))retur
  AV.pend=null;AV.kind=kind;AV.end=to;AV.lips=!!o.lips;AV.onend=o.onend||null;AV.onstart=o.onstart||null;AV.sound=!!o.sound;v.muted=!o.sound;
  try{v.currentTime=from;}catch(e){}
  const go=()=>{if(!AV.raf)AV.raf=requestAnimationFrame(avTick);};
- const start=()=>{if(AV.kind!==kind)return;const p=v.play();if(p&&p.then)p.then(go,()=>{if(!v.muted){v.muted=true;AV.sound=false;v.play().then(go,()=>avStop());}else avStop();});else go();};
+ const run=()=>{if(AV.kind!==kind)return;const p=v.play();if(p&&p.then)p.then(go,()=>{if(!v.muted){v.muted=true;AV.sound=false;v.play().then(go,()=>avStop());}else avStop();});else go();};
+ /* start only when the whole clip can play through (a half-loaded clip stopped and skipped frames); she waits in the hub
+    pose meanwhile — the workout counting can't wait */
+ const start=()=>{if(AV.kind!==kind)return;if(v.readyState>=4||o.audio)return run();let d=0;const f=()=>{if(!d){d=1;run();}};
+  v.addEventListener('canplaythrough',f,{once:true});setTimeout(f,3000);};
  /* a clip right after a clip (both on the hub at the joint), or no idle loop on screen: at once */
  if(AV.shown||!avIdleOn()||!/^k:/.test(kind)){AV.cut=!!AV.shown;start();return true;}
  /* otherwise wait for the hub (the workout counting can't wait: it dissolves instead) */
@@ -7211,8 +7217,12 @@ function avWarm(){if(!AV_SPLIT||AV.warm||!AV.on)return;AV.warm=1;
  const hr=new Date().getHours();
  /* the ways into the hub are tiny (a few dozen KB): all of them are kept ready, so a phrase never waits for one */
  if(!AVH)fetch(ALINA_VID.av+'hub.json').then(r=>r.ok?r.json():null).then(j=>{if(!j)return;AVH=j;
-  if(j.entries)setTimeout(()=>j.entries.forEach(e=>{avVid('k:in'+e).keep=1;}),2500);}).catch(()=>{});
- setTimeout(()=>['lips1','lips2','wave',hr<5?'night':hr<12?'morning':hr<18?'day':'evening'].forEach(k=>{avVid('k:'+k).keep=1;}),1200);}
+  if(j.entries)setTimeout(()=>j.entries.forEach(e=>{avVid('k:in'+e).keep=1;}),6000);}).catch(()=>{});
+ /* one after another, the most needed first, after the idle loop has loaded (all at once made the start slow) */
+ const ks=[hr<5?'night':hr<12?'morning':hr<18?'day':'evening','wave','lips1'];
+ const next=()=>{const k=ks.shift();if(!k)return;const v=avVid('k:'+k);v.keep=1;
+  let d=0;const f=()=>{if(!d){d=1;setTimeout(next,200);}};v.addEventListener('canplaythrough',f,{once:true});setTimeout(f,4000);};
+ const iv=()=>avIdleVid();const wait=()=>{const v=iv();if(v&&v.readyState>=4)next();else setTimeout(wait,500);};setTimeout(wait,800);}
 /* her voice for several recorded pieces one after another (workout player); works even when the corner Alina is hidden */
 function avVoice(keys){if(!AV.on||LANG!=='ru'||!AV.unlocked)return false;const ls=keys.map(avLine);if(ls.some(l=>!l))return false;
  const go=i=>{const l=ls[i];if(!l)return;avPlay(l[3],l[0],l[1],{key:l[4],sound:true,audio:true,onend:()=>go(i+1)});};go(0);return true;}
