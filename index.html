@@ -530,6 +530,8 @@ body.onfriend #coach{display:none!important}
 .alinafig.vmode .p-idle img{transition:opacity .35s ease}
 .alinafig.vidle canvas.avidle{opacity:1}.alinafig.vidle .p-idle img{opacity:0}
 .alinafig.vplay canvas.avid{opacity:1}.alinafig.vplay .p-idle img,.alinafig.vplay canvas.avidle{opacity:0}
+/* a switch on the hub pose: both pictures are the same, so they swap in one frame (no dissolve) */
+.alinafig.vcut canvas.avid,.alinafig.vcut canvas.avidle{transition:none!important}
 #coach .alinafig.vmode .p-idle{opacity:1!important}#coach .alinafig.vmode .astage{transform:none!important}
 /* the video Alina moves by herself: only a very light breath and sway, the same while a clip plays (no jumps, hops or shaking) */
 #coach .alinafig.vmode .abody{animation:vBreath 5s ease-in-out infinite,vSway 9s ease-in-out infinite!important}
@@ -7080,14 +7082,14 @@ const AV_MORE={
   cutie:[58.23,59.37,'Красотулька!']}};
 const avLine=k=>{if(AV_LINES[k])return[...AV_LINES[k],'talk',k];if(AV_LINES2[k])return[...AV_LINES2[k],'talk2',k];
  for(const f in AV_MORE)if(AV_MORE[f][k])return[...AV_MORE[f][k],f,k];return null;};
-/* gestures for situations (tools/avsplit.py cuts them from the Kling clips; each starts and ends in the calm pose):
-   wave = hello/bye, cheer/cheer2 = praise (thumbs up to the chest), party = big moments (wave + thumbs up + thumbs at chest).
-   [from, to] in the gesture's own file; the clip also ends by itself when the file is shorter */
-const AV_MOVES={wave:[0,5.8],cheer:[0,6.8],cheer2:[0,8],party:[0,10.4]};
-const avMoveKey=mood=>mood==='cheer'?(Math.random()<.5?'cheer':'cheer2'):AV_MOVES[mood]?mood:null;
-const AV={on:!!window.ALINA_VID,gl:null,cv:null,vids:{},kind:null,end:0,sound:false,lips:false,onend:null,unlocked:false,shown:false,raf:0};
+/* gestures for situations (tools/avsplit.py cuts them from the Kling clips):
+   wave = hello/bye (short), cheer/cheer2 = praise (thumbs up to the chest), party = big moments, sigh = sympathy
+   (the sigh with a glance aside, cut out of her idle loop so it never plays while she simply waits) */
+const AV_MOVES={wave:1,cheer:1,cheer2:1,party:1,sigh:1};
+const avMoveKey=mood=>mood==='cheer'?(Math.random()<.5?'cheer':'cheer2'):mood==='sad'?'sigh':AV_MOVES[mood]?mood:null;
+const AV={on:!!window.ALINA_VID,gl:null,cv:null,vids:{},kind:null,end:0,sound:false,lips:false,onend:null,unlocked:false,shown:false,raf:0,pend:null};
 /* the website has every phrase and gesture as its own small file (tools/avsplit.py): av/ for big screens, avm/ for phones
-   (a third of the weight; Alina is ~150 px tall there). Kinds 'k:<key>' are these files; 'talk', 'move'… are the long ones. */
+   (a third of the weight; Alina is ~150 px tall there). Kinds 'k:<key>' are these files. */
 const AV_SPLIT=!!(window.ALINA_VID&&ALINA_VID.av);
 const avDir=()=>matchMedia('(max-width:600px)').matches?ALINA_VID.avm:ALINA_VID.av;
 const avSoundOn=()=>!(S.settings&&S.settings.alinaSound===false);
@@ -7097,9 +7099,8 @@ const avSoundOn=()=>!(S.settings&&S.settings.alinaSound===false);
 function avGL(cv){let gl;try{gl=cv.getContext('webgl',{premultipliedAlpha:true,alpha:true,antialias:false});}catch(e){}if(!gl)return null;
  const sh=(t,src)=>{const s=gl.createShader(t);gl.shaderSource(s,src);gl.compileShader(s);return s;},pr=gl.createProgram();
  gl.attachShader(pr,sh(gl.VERTEX_SHADER,'attribute vec2 p;varying vec2 u;void main(){u=vec2(p.x*.5+.5,.5-p.y*.5);gl_Position=vec4(p,0.,1.);}'));
- /* m = (scale, anchor x, anchor y), d = shift: lays this clip exactly over the previous one at a switch, then glides home */
- gl.attachShader(pr,sh(gl.FRAGMENT_SHADER,'precision mediump float;varying vec2 u;uniform sampler2D t;uniform vec3 m;uniform vec2 d;uniform vec3 g;void main(){vec2 q=(u-m.yz)/m.x+m.yz-d;if(q.x<0.||q.x>1.||q.y<0.||q.y>1.){gl_FragColor=vec4(0.);return;}vec3 c=min(texture2D(t,vec2(q.x*.5,q.y)).rgb*g,1.);float a=texture2D(t,vec2(q.x*.5+.5,q.y)).g;gl_FragColor=vec4(c*a,a);}'));
- gl.linkProgram(pr);if(!gl.getProgramParameter(pr,gl.LINK_STATUS))return null;gl.useProgram(pr);gl._m=gl.getUniformLocation(pr,'m');gl._d=gl.getUniformLocation(pr,'d');gl._g=gl.getUniformLocation(pr,'g');gl.uniform3f(gl._g,1,1,1);
+ gl.attachShader(pr,sh(gl.FRAGMENT_SHADER,'precision mediump float;varying vec2 u;uniform sampler2D t;void main(){vec3 c=texture2D(t,vec2(u.x*.5,u.y)).rgb;float a=texture2D(t,vec2(u.x*.5+.5,u.y)).g;gl_FragColor=vec4(c*a,a);}'));
+ gl.linkProgram(pr);if(!gl.getProgramParameter(pr,gl.LINK_STATUS))return null;gl.useProgram(pr);
  gl.bindBuffer(gl.ARRAY_BUFFER,gl.createBuffer());gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
  const l=gl.getAttribLocation(pr,'p');gl.enableVertexAttribArray(l);gl.vertexAttribPointer(l,2,gl.FLOAT,false,0,0);
  gl.bindTexture(gl.TEXTURE_2D,gl.createTexture());
@@ -7116,83 +7117,75 @@ function avVid(kind){if(AV.vids[kind]){AV.vids[kind].used=performance.now();retu
 /* the canvas lives in the coach figure, which is re-rendered sometimes: re-attach WebGL when it changed */
 function avCanvas(){const cv=document.querySelector('#coach canvas.avid');if(!cv)return null;
  if(cv!==AV.cv){AV.cv=cv;AV.gl=avGL(cv);if(!AV.gl)AV.on=false;}return AV.gl?cv:null;}
-function avShow(on){AV.shown=on;const f=document.querySelector('#coach .alinafig');if(f)f.classList.toggle('vplay',on);}
+/* cut = switch in one frame (both pictures show the same hub pose then); otherwise a soft dissolve */
+function avShow(on,cut){AV.shown=on;const f=document.querySelector('#coach .alinafig');if(!f)return;f.classList.toggle('vcut',!!cut);f.classList.toggle('vplay',on);}
+function avDraw(gl,cv,v){gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,v);gl.viewport(0,0,cv.width,cv.height);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);gl.drawArrays(gl.TRIANGLE_STRIP,0,4);}
 function avTick(){AV.raf=0;const v=AV.kind&&AV.vids[AV.kind];if(!v||(v.paused&&!v.ended))return;
- if(v.ended||v.currentTime>=AV.end-.03){const cb=AV.onend,k=AV.kind,fi=AVX?avFrame(v):0;avStop(true);if(cb)cb();if(!AV.kind)avRelease(k,fi);return;}
+ if(v.ended||v.currentTime>=AV.end-.03){const cb=AV.onend,k=AV.kind;avStop(true);if(cb)cb();if(!AV.kind)avRelease(k,true);return;}
  const cv=avCanvas(),ready=v.readyState>=2&&!v.seeking;
- if(cv&&ready){try{if(!AV.shown&&AV.mkX){AV.X=AV.mkX();AV.mkX=null;}avDraw(AV.gl,cv,v,AV.X,AVX&&/^k:/.test(AV.kind)&&AVX.g&&AVX.g[AV.kind.slice(2)]);avShow(true);}catch(e){AV.on=false;avStop();return;}}
+ if(cv&&ready){try{avDraw(AV.gl,cv,v);if(!AV.shown)avShow(true,AV.cut);}catch(e){AV.on=false;avStop();return;}}
  if(ready&&AV.onstart){const f=AV.onstart;AV.onstart=null;f();}   // her voice really starts now: the text may start typing
  AV.raf=requestAnimationFrame(avTick);}
-/* seamless switches (tools/avmatch.py → av/match.json): pose fingerprints and body positions of the frames */
-let AVX=null;
-const avDist=(a,b)=>{let s=0;for(let i=0;i<a.length;i++){const x=a[i]-b[i];s+=x*x;}return s;};
+/* ONE CONTINUOUS FILM. Every clip starts and ends in the same hub pose, and the idle loop passes that pose every few
+   seconds (av/hub.json). A clip starts exactly when the idle loop shows the hub, and after it the idle loop is put back
+   on a hub frame — both switches happen between two identical pictures. */
+let AVH=null;
 const avIdleVid=()=>AV.vids[/^k:/.test(ALINA_VID.idle||'')?ALINA_VID.idle:'idle'];
-const avIdleOn=()=>{const v=avIdleVid(),f=document.querySelector('#coach .alinafig.vidle');return!!(AVX&&v&&!v.paused&&f);};
-const avFrame=v=>Math.max(0,Math.round(v.currentTime*AVX.fps));
-/* glide: show the new content's body (tb = [x, y, size]) exactly where the old one was (sb), then ease to its own place */
-function avGlide(sb,tb){if(!sb||!tb)return null;const S=Math.max(.85,Math.min(1.15,sb[2]/tb[2])),cl=x=>Math.max(-.08,Math.min(.08,x));
- return{S,c:[tb[0],tb[1]],d:[cl((sb[0]-tb[0])/S),cl((sb[1]-tb[1])/S)],t0:performance.now(),dur:700};}
-function avXf(X){if(!X)return[1,0,0,0,0];const k=Math.min(1,(performance.now()-X.t0)/X.dur),e=1-(1-k)*(1-k)*(1-k),r=1-e;
- return[1+(X.S-1)*r,X.c[0],X.c[1],X.d[0]*r,X.d[1]*r];}
-/* g = colour gain: every clip is graded to the idle loop's colours (tools/avmatch.py), so a switch doesn't flash */
-function avDraw(gl,cv,v,X,g){const x=avXf(X);if(gl._m){gl.uniform3f(gl._m,x[0],x[1],x[2]);gl.uniform2f(gl._d,x[3],x[4]);const G=g||[1,1,1];gl.uniform3f(gl._g,G[0],G[1],G[2]);}
- gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,v);gl.viewport(0,0,cv.width,cv.height);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);gl.drawArrays(gl.TRIANGLE_STRIP,0,4);}
-/* she is never a picture: alina-idle.mp4 (standing, breathing, blinking; built forth-and-back so it loops without a seam)
-   plays all the time on its own canvas under the clips; the still picture shows only until its first frame is drawn */
+const avIdleOn=()=>{const v=avIdleVid();return!!(AVH&&v&&!v.paused&&v.readyState>=2&&document.querySelector('#coach .alinafig.vidle'));};
+const avIdleFrame=()=>Math.round(avIdleVid().currentTime*AVH.fps)%AVH.len;
+/* frames until the idle loop shows the hub next */
+const avToHub=()=>{const c=avIdleFrame();return Math.min(...AVH.hubs.map(h=>(h-c+AVH.len)%AVH.len));};
 const IDLE={cv:null,gl:null,raf:0};
 function avIdle(){if(!AV.on||!ALINA_VID.idle||matchMedia('(prefers-reduced-motion: reduce)').matches)return;const cv=document.querySelector('#coach canvas.avidle');if(!cv)return;
  if(cv!==IDLE.cv){IDLE.cv=cv;IDLE.gl=avGL(cv);}if(!IDLE.gl)return;
  const v=avVid(/^k:/.test(ALINA_VID.idle)?ALINA_VID.idle:'idle');v.keep=1;v.loop=true;if(v.paused){const p=v.play();if(p&&p.catch)p.catch(()=>{});}
  if(!IDLE.raf){const tick=()=>{IDLE.raf=0;if(v.paused||COACH.min)return;
-   if(v.readyState>=2&&IDLE.cv&&IDLE.cv.isConnected){avDraw(IDLE.gl,IDLE.cv,v,IDLE.X);const f=IDLE.cv.closest('.alinafig');if(f&&!f.classList.contains('vidle'))f.classList.add('vidle');}
+   if(v.readyState>=2&&IDLE.cv&&IDLE.cv.isConnected){avDraw(IDLE.gl,IDLE.cv,v);const f=IDLE.cv.closest('.alinafig');if(f&&!f.classList.contains('vidle'))f.classList.add('vidle');
+    /* a clip is waiting for the hub: start it on this very frame (or dissolve when it waited too long) */
+    const P=AV.pend;if(P&&AVH){
+     /* on the way out of the hub: turn her movement around (the mirrored frame is the same picture) to come back sooner */
+     if(!P.turned&&AVH.segs){const p=avIdleFrame(),g=AVH.segs.find(x=>p>=x[0]&&p<x[1]);if(!g||p-g[0]>=(g[1]-g[0])/2-2)P.turned=1;else if(p-g[0]>2){P.turned=1;try{v.currentTime=(g[0]+g[1]-p+.5)/AVH.fps;}catch(e){}}}
+     if(!v.seeking&&(avToHub()<=1||performance.now()>P.deadline))avGo(performance.now()<=P.deadline);}}
    IDLE.raf=requestAnimationFrame(tick);};IDLE.raf=requestAnimationFrame(tick);}}
-/* play [from,to) of a file. sound=true tries her voice and falls back to silent lips when the browser refuses */
+/* start the waiting clip; cut = we are on the hub (an invisible switch) */
+function avGo(cut){const P=AV.pend;if(!P)return;AV.pend=null;if(AV.kind!==P.kind)return;AV.cut=cut;P.start();}
+/* play a clip. sound=true tries her voice and falls back to silent lips when the browser refuses */
 function avPlay(kind,from,to,o){o=o||{};if(!AV.on||(!avCanvas()&&!o.audio))return false;
- if(AV_SPLIT&&o.key){kind='k:'+o.key;to-=from;from=0;}
+ if(AV_SPLIT&&o.key){kind='k:'+o.key;from=0;to=1e9;}           // the small files are played whole, with their bridges
  if(matchMedia('(prefers-reduced-motion: reduce)').matches&&!o.sound)return false;
- const v=avVid(kind),prev=AV.kind&&AV.vids[AV.kind],key=kind.slice(2);
- /* where she is on screen right now (the idle loop or the clip that just ended) and where the new clip's body starts */
- let sb=null,wait=0;
- if(AVX&&AV_SPLIT){
-  const last=prev&&AV.kind!==kind?{k:AV.kind,fi:avFrame(prev)}:!prev&&AV.shown?AV.last:null;   // a clip on screen (or one that just ended): continue from it
-  if(last&&/^k:/.test(last.k)){const pk=last.k.slice(2);sb=pk==='lips'?AVX.bl[Math.min(AVX.bl.length-1,last.fi)]:AVX.be[pk];}
-  else if(!AV.shown&&avIdleOn()){const iv=avIdleVid(),n=AVX.idle.length,cur=avFrame(iv)%n;
-   if(key==='lips'){let bf=0,bd=1e9;for(let f=0;f<AVX.lips.length-80;f+=2){const dd=avDist(AVX.lips[f],AVX.idle[cur]);if(dd<bd){bd=dd;bf=f;}}from=bf/AVX.fps;to=from+2.5+Math.random()*1.5;}
-   else if(AVX.s[key]&&!o.audio){   // wait (≤1 s with her voice, ≤2.5 s for a gesture) for the idle frame most like the clip's start
-    const W=o.sound?30:75;let bj=0,bd=1e9;for(let j=0;j<=W;j++){const dd=avDist(AVX.idle[(cur+j)%n],AVX.s[key])+j*2;if(dd<bd){bd=dd;bj=j;}}wait=bj*1000/AVX.fps;}}}
+ const v=avVid(kind),prev=AV.kind&&AV.vids[AV.kind];
  if(prev&&AV.kind!==kind)prev.pause();
- clearTimeout(AV.wait);AV.kind=kind;AV.end=to;AV.lips=!!o.lips;AV.onend=o.onend||null;AV.onstart=o.onstart||null;AV.sound=!!o.sound;v.muted=!o.sound;
- /* the glide is fixed at the first drawn frame: then it is known exactly where the idle loop is */
- AV.X=null;AV.mkX=AVX&&AV_SPLIT?()=>{let b=sb;if(!b&&avIdleOn()){const iv=avIdleVid();b=AVX.bi[avFrame(iv)%AVX.bi.length];}
-  const tb=key==='lips'?AVX.bl[Math.min(AVX.bl.length-1,Math.round(from*AVX.fps))]:AVX.bs[key];return avGlide(b,tb);}:null;
+ AV.pend=null;AV.kind=kind;AV.end=to;AV.lips=!!o.lips;AV.onend=o.onend||null;AV.onstart=o.onstart||null;AV.sound=!!o.sound;v.muted=!o.sound;
  try{v.currentTime=from;}catch(e){}
  const go=()=>{if(!AV.raf)AV.raf=requestAnimationFrame(avTick);};
  const start=()=>{if(AV.kind!==kind)return;const p=v.play();if(p&&p.then)p.then(go,()=>{if(!v.muted){v.muted=true;AV.sound=false;v.play().then(go,()=>avStop());}else avStop();});else go();};
- if(wait>40)AV.wait=setTimeout(start,wait);else start();
+ /* a clip right after a clip (both on the hub at the joint), or no idle loop on screen: at once */
+ if(AV.shown||!avIdleOn()||!/^k:/.test(kind)){AV.cut=!!AV.shown;start();return true;}
+ /* otherwise wait for the hub (the workout counting can't wait: it dissolves instead) */
+ const cap=o.audio?0:o.lips?2500:4500;
+ AV.pend={kind,start,deadline:performance.now()+cap};
+ if(!cap)avGo(avToHub()<=1);
  return true;}
-/* back to the idle loop without a visible switch: under the last frame of the clip the hidden idle loop jumps to the
-   frame most like it, its body is laid over the clip's, the clip fades out and the idle glides to its own place */
-function avRelease(kind,fi){const iv=avIdleVid();
- if(!AVX||!kind||!/^k:/.test(kind)||!avIdleOn()){avShow(false);return;}
- const key=kind.slice(2),F=key==='lips'?AVX.lips[Math.min(AVX.lips.length-1,fi)]:AVX.e[key],B=key==='lips'?AVX.bl[Math.min(AVX.bl.length-1,fi)]:AVX.be[key];
- if(!F){avShow(false);return;}
- let bj=0,bd=1e9;for(let j=0;j<AVX.idle.length;j++){const dd=avDist(AVX.idle[j],F);if(dd<bd){bd=dd;bj=j;}}
- let done=false;const fin=()=>{if(done)return;done=true;if(AV.kind)return;IDLE.X=avGlide(B,AVX.bi[bj]);avShow(false);};
- iv.addEventListener('seeked',fin,{once:true});setTimeout(fin,350);
- try{iv.currentTime=bj/AVX.fps;}catch(e){fin();}}
-function avStop(keep){const k=AV.kind,v=k&&AV.vids[k],fi=v&&AVX?avFrame(v):0;if(k)AV.last={k,fi};clearTimeout(AV.wait);if(v){v.pause();v.muted=true;}AV.kind=null;AV.sound=false;AV.lips=false;AV.onend=null;
- if(AV.raf){cancelAnimationFrame(AV.raf);AV.raf=0;}if(!keep){if(AV.shown)avRelease(k,fi);else avShow(false);}}
+/* back to the idle loop: the clip ends on the hub, the hidden idle loop is put on a hub frame and the pictures swap */
+function avRelease(kind,ended){const iv=avIdleVid();
+ if(!AVH||!iv||!avIdleOn()){avShow(false);return;}
+ let done=false;const fin=()=>{if(done)return;done=true;if(AV.kind)return;avShow(false,ended);};
+ /* back on a hub that starts a short calm part, so the next clip won't wait long */
+ const hs=(AVH.segs||[]).filter(g=>g[1]-g[0]<=90).map(g=>g[0]),h=hs.length?hs[Math.floor(Math.random()*hs.length)]:AVH.hubs[0];
+ iv.addEventListener('seeked',()=>requestAnimationFrame(()=>requestAnimationFrame(fin)),{once:true});setTimeout(fin,450);   // the decoder needs a frame to show the new picture
+ try{iv.currentTime=(h+.5)/AVH.fps;}catch(e){fin();}}
+function avStop(keep){const k=AV.kind,v=k&&AV.vids[k];AV.pend=null;if(v){v.pause();v.muted=true;}AV.kind=null;AV.sound=false;AV.lips=false;AV.onend=null;
+ if(AV.raf){cancelAnimationFrame(AV.raf);AV.raf=0;}if(!keep){if(AV.shown)avRelease(k,false);else avShow(false);}}
 const avSpeaking=()=>!!(AV.sound&&AV.kind&&!AV.lips);
-/* silent lips for any text: a random piece of the speech, chained until the typing stops */
-const AV_LIPS=[...Object.keys(AV_LINES),...[AV_LINES2,...Object.values(AV_MORE)].flatMap(o=>Object.keys(o).filter(k=>o[k][1]-o[k][0]>1.5))];
-function avLips(){const more={lips:true,onend:()=>{if(COACH.talk||(window.speechSynthesis&&speechSynthesis.speaking))avLips();}};
- if(AV_SPLIT){const s=Math.random()*4;avPlay('k:lips',s,s+2.5+Math.random()*1.5,more);return;}   // one small looped file
- const [a,b,,kind]=avLine(AV_LIPS[Math.floor(Math.random()*AV_LIPS.length)]);avPlay(kind,a,b,more);}
+/* silent lips for any text: short muted pieces of talking (each from the hub back to the hub), chained while it types;
+   the piece playing when the text is done finishes, so she ends her sentence instead of freezing */
+const AV_LIPS=['lips1','lips2','lips3','lips4','lips5'];
+function avLips(){avPlay('lips',0,0,{lips:true,key:AV_LIPS[Math.floor(Math.random()*AV_LIPS.length)],onend:()=>{if(COACH.talk||(window.speechSynthesis&&speechSynthesis.speaking))avLips();}});}
 /* the files she needs first are fetched while the page settles: lips, the wave and her first words */
 function avWarm(){if(!AV_SPLIT||AV.warm||!AV.on)return;AV.warm=1;
  const hr=new Date().getHours();
- if(!AVX)fetch(ALINA_VID.av+'match.json').then(r=>r.ok?r.json():null).then(j=>{if(j)AVX=j;}).catch(()=>{});
- setTimeout(()=>[ALINA_VID.face&&!ALINA_VID.idle?'':'lips','wave',hr<5?'night':hr<12?'morning':hr<18?'day':'evening'].filter(Boolean).forEach(k=>{avVid('k:'+k).keep=1;}),1200);}
+ if(!AVH)fetch(ALINA_VID.av+'hub.json').then(r=>r.ok?r.json():null).then(j=>{if(j)AVH=j;}).catch(()=>{});
+ setTimeout(()=>['lips1','lips2','wave',hr<5?'night':hr<12?'morning':hr<18?'day':'evening'].forEach(k=>{avVid('k:'+k).keep=1;}),1200);}
 /* her voice for several recorded pieces one after another (workout player); works even when the corner Alina is hidden */
 function avVoice(keys){if(!AV.on||LANG!=='ru'||!AV.unlocked)return false;const ls=keys.map(avLine);if(ls.some(l=>!l))return false;
  const go=i=>{const l=ls[i];if(!l)return;avPlay(l[3],l[0],l[1],{key:l[4],sound:true,audio:true,onend:()=>go(i+1)});};go(0);return true;}
@@ -7219,7 +7212,7 @@ function avMessage(m){if(!AV.on)return 0;
  const mk=avMoveKey(m.mood),mv=mk&&AV_MOVES[mk];
  /* lips: while she stands in her living idle loop, a muted talking clip; without it, her lip pieces on the still (extras.js) */
  const clipLips=!ALINA_VID.face||!!ALINA_VID.idle;
- if(mv)avPlay('move',mv[0],mv[1],{key:mk,onend:()=>{if(COACH.cur===m&&COACH.talk&&clipLips)avLips();}});
+ if(mv)avPlay('move',0,0,{key:mk,onend:()=>{if(COACH.cur===m&&COACH.talk&&clipLips)avLips();}});
  else if(clipLips)avLips();   // with her face pieces the lips move on the still, letter by letter (extras.js)
  return 0;}
 /* her whole speech, line by line, with subtitles in the bubble */
@@ -7306,7 +7299,7 @@ function coachNext(){const m=COACH.q.shift();if(!m){const b=$('#cbub');if(b)b.hi
  /* with her real voice the text starts together with the voice (the clip may need a moment to load), not before it */
  const type=()=>{if(COACH.cur!==m||m.started)return;m.started=1;clearInterval(COACH.typing);COACH.typing=setInterval(()=>{i+=1;COACH.pos=i;tx.textContent=m.text.slice(0,i);if(i>=m.text.length)coachFinish();},ms||34);};
  if(ms){AV.onstart=type;setTimeout(type,2500);}else type();}
-function coachFinish(){clearInterval(COACH.typing);COACH.typing=null;COACH.talk=false;if(COACH.cur)COACH.cur.started=1;if(AV.lips&&!(window.speechSynthesis&&speechSynthesis.speaking))avStop();if(!COACH.cur)return;$('#ctext').textContent=COACH.cur.text;coachButtons();}
+function coachFinish(){clearInterval(COACH.typing);COACH.typing=null;COACH.talk=false;if(COACH.cur)COACH.cur.started=1;/* lips: the piece that plays finishes by itself (it ends in her calm pose) */if(!COACH.cur)return;$('#ctext').textContent=COACH.cur.text;coachButtons();}
 function coachButtons(){const m=COACH.cur;if(!m||COACH.typing)return;const ac=$('#cact');if(!ac)return;
  ac.innerHTML=m.acts.map(a=>a[1][0]==='@'?`<button class="btn" data-co="${a[1].slice(1)}">${esc(a[0])}</button>`:a[1][0]==='#'?`<a class="btn" href="${a[1]}">${esc(a[0])}</a>`:`<button class="btn" data-act="${a[1]}">${esc(a[0])}</button>`).join('')+(COACH.q.length?`<button class="btn pri" data-co="next">${L('Дальше ›')}</button>`:'');}
 function coachTip(){const t=todayIso(),tip=bioTipFor(t,cycleInfo(t)),q=QUOTES[Math.floor(Math.random()*QUOTES.length)];
@@ -7370,10 +7363,10 @@ function coachReact(type,v,d){if(!ST_())return;const t=d||todayIso(),R=(txt,mood
   else if(type==='journal')R(L('Записала. Спасибо, что делишься — так я лучше понимаю, как тебе помочь 💛'),'idle');}
  else if(type==='done')R(L('Тренировка выполнена! {0}, ты большая молодец 🎉',NM()),'party');
  else if(type==='ex'){if(Math.random()<.35)R(L(['Есть! ✔','Так держать!','Красиво работаешь!','Ещё одно — и ты ближе к цели!'][Math.floor(Math.random()*4)]),'idle');}   // a short word, no 7-second gesture
- else if(type==='mood'){if(['sad','anx','apathy','irrit'].includes(v))R(L('Спасибо, что отметила. Такие дни бывают. Прогулка при дневном свете, дыхание 4-7-8 и тёплый чай помогают. Я рядом 💛'),'think');else if(['happy','energ'].includes(v))R(L('Ура, хорошее настроение — самое время для классной тренировки! ✨'),'cheer');}
+ else if(type==='mood'){if(['sad','anx','apathy','irrit'].includes(v))R(L('Спасибо, что отметила. Такие дни бывают. Прогулка при дневном свете, дыхание 4-7-8 и тёплый чай помогают. Я рядом 💛'),'sad');else if(['happy','energ'].includes(v))R(L('Ура, хорошее настроение — самое время для классной тренировки! ✨'),'cheer');}
  else if(type==='flow'){if(['med','heavy'].includes(v))R(L('Береги себя в эти дни. Отметь спазмы или низкую энергию — и я облегчу тренировку.'),'idle');}
  else if(type==='sym'){if(v==='cramps')R(L('Отметила спазмы. Во время месячных тренировка облегчится автоматически. Тепло и лёгкое движение помогают.'),'think');}
- else if(type==='energy'){if(v<=2)R(L('Мало сил — это нормально. Сегодня мягкий режим, без геройства 💛'),'think');else if(v>=4)R(L('Энергии много — отличный день, чтобы взять резинку потуже! 💪'),'cheer');}
+ else if(type==='energy'){if(v<=2)R(L('Мало сил — это нормально. Сегодня мягкий режим, без геройства 💛'),'sad');else if(v>=4)R(L('Энергии много — отличный день, чтобы взять резинку потуже! 💪'),'cheer');}
  else if(type==='bio'){const b=getDay(t).bio||{};if(BIO_CORE.every(c=>b[c[0]]))R(L('Все 5 привычек дня выполнены — это настоящий биохакинг! 🧬'),'cheer');}
  else if(type==='task'){R(L('Задача выполнена! ✔'),'idle');}}
 
@@ -7653,7 +7646,6 @@ function vGoal(){const s=ST_(),N=NW(),gt=GTYPES.find(g=>g[0]===s.gtype)||GTYPES[
  const sub=isLose()?(milestoneW()>s.goal?L('За {0} {1} — ориентир ~{2} кг, дальше — спокойно до {3} кг.',N,plural(N,'неделю','недели','недель'),fmtN(milestoneW()),fmtN(s.goal)):L('За {0} {1} — цель {2} кг.',N,plural(N,'неделю','недели','недель'),fmtN(s.goal))):L('За {0} {1}: сила, форма и энергия. Вес держим примерно на месте, а фигура меняется за счёт мышц.',N,plural(N,'неделю','недели','недель'));
  return`<h1 class="page-h">${L('Моя цель')}</h1><p class="page-sub">${L('Что мы делаем и почему — чтобы помнить, ради чего каждая тренировка.')}</p>
  <div class="card hero"><div class="hi">${esc(head)}</div><p style="margin:6px 0 0">${L('Тонкая талия, выпуклые ягодицы, подтянутые руки, ровная осанка и здоровые волосы.')} ${esc(sub)}</p></div>
- ${avatarCompare()}
  ${isLose()?chancesCard():''}
  <div class="grid2">
  <div class="card"><h3>🍑 ${L('Ягодицы')}</h3><p style="margin-top:0">${L('Выпуклость дают <b>мышцы</b>, а они растут только от силовой нагрузки с прогрессией. Поэтому ягодицы тренируются 2–3 раза в неделю, а каждую неделю что-то немного усложняется: резинка потуже, рюкзак тяжелее, медленнее опускание. Основа — упражнения в растянутом положении: болгарские выпады, глубокий присед, румынская тяга, плюс мосты для верхней точки. Белок обязателен.')}</p></div>
@@ -7698,7 +7690,7 @@ function vSettings(){const s=ST_(),h=H(),eq=s.eq||{};return`<h1 class="page-h">$
  <div class="small muted" style="margin-top:8px">${L('Когда ты отмечаешь месячные каждый день, длина цикла считается автоматически по твоим данным.')}</div>`:''}</div>
  <div class="card"><h3>🩺 ${L('Здоровье')}</h3><div class="row">${HEALTH.map(x=>`<label class="tog"><input type="checkbox" data-hl="${x[0]}" ${h[x[0]]?'checked':''}> ${L(x[1])}</label>`).join('')}</div>
  <div class="row" style="margin-top:10px"><label class="tog"><input type="checkbox" data-sb="noCount" ${s.noCount?'checked':''}> ${L('🍽 Не хочу считать калории (метод тарелки)')}</label><label class="tog"><input type="checkbox" data-sb="care" ${s.care?'checked':''}> ${L('💗 Бережный режим (мягче дефицит и нагрузка)')}</label></div></div>
- <div class="card" id="lookcard"><h3>🪞 ${L('Мой аватар')}</h3>${lookPicker(lookOf(s),'lk')}</div>
+
  <div class="card"><h3>${L('Тренер и аватар')}</h3>
  <div class="row"><label class="tog"><input type="checkbox" data-sb="voice" ${s.voice!==false?'checked':''}> ${L('🔊 Голос тренера в режиме тренировки')}</label><label class="tog"><input type="checkbox" data-sb="coachVoice" ${s.coachVoice?'checked':''}> ${L('Озвучивать подсказки Алины')}</label></div>
  <div class="row" style="margin-top:12px"><button class="btn" data-act="voicetest">${L('▶ Проверить голос')}</button><span class="small muted" id="vinfo"></span></div></div>
@@ -8548,12 +8540,13 @@ function wzStore(){if(DEMO||!WZ||WZ.redo)return;if(!WZ.step&&JSON.stringify(WZ.o
 function wzDrop(){try{localStorage.removeItem(WZKEY);}catch(e){}}
 function wzDraft(){if(DEMO)return null;try{const x=JSON.parse(localStorage.getItem(WZKEY));if(x&&x.o&&typeof x.o==='object'&&x.step>=0)return x;}catch(e){}return null;}
 function onboarding(redo){const dr=!redo&&wzDraft();
- if(dr)WZ={step:Math.min(WZ_STEPS,+dr.step||0),o:wzDefaults(dr.o),redo:false};
+ if(dr)WZ={step:Math.min(WZ_STEPS,+dr.step||0),o:wzDefaults(dr.o),redo:false};if(WZ&&WZ.step===2)WZ.step=3;
  else WZ={step:0,o:wzDefaults(redo&&ST_()?ST_():null),redo:!!redo};if(!WZ.o.sports||!WZ.o.sports.length)WZ.o.sports=['home'];if(!WZ.o.motiv)WZ.o.motiv=[];if(redo)WZ.step=1;wzRender();}
 const WZ_STEPS=9;
 const DOC_NOTE='Программа не заменяет консультацию врача. При хронических заболеваниях, травмах, беременности и после операций проконсультируйтесь со специалистом.';
 // steps that don't apply: kids skip sports/equipment and the cycle
-const wzSkip=(st,o)=>o.who==='kid'&&(st===5||st===6);
+/* step 2 (the drawn avatar's hair and looks) is not shown any more: the drawn figures looked poor next to the real Alina */
+const wzSkip=(st,o)=>st===2||o.who==='kid'&&(st===5||st===6);
 const minGoal=o=>Math.ceil(18.5*Math.pow(num(o.h)/100,2)*2)/2;
 function recWeeks(o){if(o.who==='kid')return 8;const w0=num(o.w0),g=num(o.goal);if(o.gtype!=='lose'||!w0||!g||g>=w0)return 12;const wk=(w0-g)/(w0*.0065);return WEEKS_OPT.find(x=>x>=8&&x>=wk)||52;}
 function wzOpt(name,v,label,cur,sub){return`<button class="wopt ${String(cur)===String(v)?'on':''}" data-wz="${name}" data-v="${esc(v)}"><b>${L(label)}</b>${sub?`<span>${L(sub)}</span>`:''}</button>`;}
